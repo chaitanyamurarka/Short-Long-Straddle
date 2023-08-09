@@ -107,7 +107,7 @@ def short_straddle(name,kite,instruments,existing_positions):
     # Check if it's time to exit the trade
     if datetime.now().time() >= datetime.strptime('09:25', '%H:%M').time():
         for position in existing_positions:
-            if get_name_from_instrument_token(instruments,position[2]) == name and position[1] < 0 and 'CE' in position[0]:  # Assuming short positions
+            if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] < 0 and 'CE' in position['tradingsymbol']:  # Assuming short positions
                 instru_ce = position[2]
                 exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
                 instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp)
