@@ -63,6 +63,11 @@ def get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp):
         if instrument['name'] == name and instrument['expiry'] == exp and instrument['strike'] == stri and instrument['instrument_type']=='PE':
             return instrument['instrument_token'],instrument['tradingsymbol']
         
+def get_sell_pe_from_ce(existing_positions,name):
+    for position in existing_positions:
+        if (name in position['name']  and 'PE' in position['name']):
+            return position['sell_price']
+  
 def cal_dates():
     # Calculate the dae of last friday and thursday of the current month
     year = int(datetime.now().today().strftime('%Y'))
@@ -111,6 +116,8 @@ def short_straddle(name,kite,instruments,existing_positions):
                 instru_ce = position[2]
                 exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
                 instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp)
+                sell_ce = position['sell_price']
+                sell_pe = get_sell_pe_from_ce(existing_positions,name)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
                 if (
@@ -118,7 +125,13 @@ def short_straddle(name,kite,instruments,existing_positions):
                 or (
                     datetime.now().today().strftime('%A') == 'Friday'  # Check if it's a Friday
                     and datetime.now().time() >= datetime.strptime('14:00', '%H:%M').time()
-                )):
+                )
+                
+                or
+                (
+                    (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
+                )
+                ):
                     print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
                     # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                     #             KiteConnect.ORDER_TYPE_MARKET)

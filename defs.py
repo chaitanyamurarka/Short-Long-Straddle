@@ -105,6 +105,11 @@ def get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp):
         if instrument['name'] == name and instrument['expiry'] == exp and instrument['strike'] == stri and instrument['instrument_type']=='PE':
             return instrument['instrument_token'],instrument['tradingsymbol']
         
+def get_sell_pe_from_ce(existing_positions,name):
+    for position in existing_positions:
+        if (name in position[0]  and 'PE' in position[0]):
+            return position[3]
+        
 def cal_dates():
     # Calculate the dae of last friday and thursday of the current month
     year = int(datetime.now().today().strftime('%Y'))
@@ -131,7 +136,6 @@ def short_straddle(name,kite,instruments,existing_positions):
         (int(datetime.now().today().strftime('%d')) == last_friday and datetime.now().time() <= datetime.strptime('14:00', '%H:%M').time())
         )
         ):
-        print(name)
         if net_quant_zero(kite,name):
             ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
             atm = None  # Initialize ATM to None
@@ -147,6 +151,8 @@ def short_straddle(name,kite,instruments,existing_positions):
                 # place_order(kite,tradingsymbol_pe, 0, lot_size_pe, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                 #             KiteConnect.ORDER_TYPE_MARKET)
                 # 2. Insert a row of data into the 'portfolio' table
+                ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
+                ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
 
                 try:
                     sqliteConnection = sqlite3.connect('SQLite_Python.db')
@@ -154,12 +160,12 @@ def short_straddle(name,kite,instruments,existing_positions):
                     # print("Database created and Successfully Connected to SQLite")
                     
                     insert_data_query = '''
-                        INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,timestamp)
-                        VALUES (?, ?, ?,?);
+                        INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
+                        VALUES (?, ?, ?,?,?);
                     '''
-                    data_to_insert = (tradingsymbol_ce, lot_size_ce*-1,instru_ce,datetime.now())
+                    data_to_insert = (tradingsymbol_ce, lot_size_ce*-1,instru_ce,ltp_ce,datetime.now())
                     cursor.execute(insert_data_query, data_to_insert)
-                    data_to_insert = (tradingsymbol_pe, lot_size_pe*-1,instru_pe,datetime.now())
+                    data_to_insert = (tradingsymbol_pe, lot_size_pe*-1,instru_pe,ltp_pe,datetime.now())
                     cursor.execute(insert_data_query, data_to_insert)
 
                     sqliteConnection.commit()
@@ -199,6 +205,8 @@ def short_straddle(name,kite,instruments,existing_positions):
                     instru_ce = position[2]
                     exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
                     instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp)
+                    sell_ce = position[3]
+                    sell_pe = get_sell_pe_from_ce(rows,name)
                     ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                     ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
                     if (
@@ -206,6 +214,10 @@ def short_straddle(name,kite,instruments,existing_positions):
                     or (
                         datetime.now().today().strftime('%A') == 'Friday'  # Check if it's a Friday
                         and datetime.now().time() >= datetime.strptime('14:00', '%H:%M').time()
+                    )
+                    or
+                    (
+                        (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
                     )):
                         print('')
                         # print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
