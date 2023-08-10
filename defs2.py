@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
 import calendar
-import sqlite3
 
 def net_quant_zero(existing_positions,name):
     if len(existing_positions)==0 :
