@@ -1,8 +1,10 @@
-# %%
 from kiteconnect import KiteConnect
 from datetime import datetime
 import sqlite3
 import time
+import time
+from datetime import datetime, time as dt_time
+from concurrent.futures import ThreadPoolExecutor
 from defs import net_quant_zero,get_symbol_lotsize,place_order,get_expiry_date_and_strike_from_instrument_token,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle
 import pandas as pd
 login = pd.read_excel('login.xlsx')
@@ -75,19 +77,31 @@ for index, row in login.iterrows():
     row['access_token']=access_token
     ins[row['name']]=kite
 
-for index, row in login.iterrows():
+
+# Assuming you have imported symbols and defined the short_straddle function
+
+def process_row(row):
     kite = ins[row['name']]
     instruments = kite.instruments()
+    existing_positions = kite.positions()['net']
+
+    for key, val in symbols.items():
+        short_straddle(key[4:], val, kite, instruments, existing_positions)
+
+
+# Use a ThreadPoolExecutor for managing concurrent processing
+with ThreadPoolExecutor(max_workers=4) as executor:
     while True:
-        if datetime.now().time() != datetime.strptime('05:30', '%H:%M').time():
-            existing_positions = kite.positions()['net']
+        if datetime.now().time() >= datetime.strptime('05:30', '%H:%M').time():
+            # Process each row concurrently
+            futures = [executor.submit(process_row, row) for index, row in login.iterrows()]
+            # Wait for all tasks to complete
+            for future in futures:
+                future.result()
 
-            # Create and start a process for each symbol
-            for key,val in symbols.items():
-                short_straddle(key[4:],val,kite,instruments,existing_positions)
-            
-            time.sleep(5)
+            time.sleep(5)  # Adjust the delay as needed
         else:
-            print('! Session Ended Pls Restart')
+            print('Session Ended. Please Restart')
+            break  # Exit the loop when outside the processing time window
 
-
+# %
