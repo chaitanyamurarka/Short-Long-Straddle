@@ -83,7 +83,7 @@ def cal_dates():
     first_friday = 1 + days_to_add
     return first_friday,last_friday,last_thursday_date_dt
 
-def short_straddle(name,kite,instruments,existing_positions):
+def short_straddle(name,val,kite,instruments,existing_positions):
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade
     if (
@@ -103,10 +103,10 @@ def short_straddle(name,kite,instruments,existing_positions):
                         atm = i['strike']
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,atm)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
-                # place_order(kite,tradingsymbol_ce, 0, lot_size_ce, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                print(f'\nENTERING SHORT STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
+                # place_order(kite,tradingsymbol_ce, 0, lot_size_ce*val, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                 # KiteConnect.ORDER_TYPE_MARKET)
-                # place_order(kite,tradingsymbol_pe, 0, lot_size_pe, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                # place_order(kite,tradingsymbol_pe, 0, lot_size_pe*val, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                 #             KiteConnect.ORDER_TYPE_MARKET)
 
     # Check if it's time to exit the trade

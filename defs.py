@@ -125,7 +125,7 @@ def cal_dates():
     first_friday = 1 + days_to_add
     return first_friday,last_friday,last_thursday_date_dt
 
-def short_straddle(name,kite,instruments,existing_positions):
+def short_straddle(name,val,kite,instruments,existing_positions):
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade
     if (
@@ -145,7 +145,7 @@ def short_straddle(name,kite,instruments,existing_positions):
                         atm = i['strike']
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,atm)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
+                print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
                 # place_order(kite,tradingsymbol_ce, 0, lot_size_ce, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                 # KiteConnect.ORDER_TYPE_MARKET)
                 # place_order(kite,tradingsymbol_pe, 0, lot_size_pe, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
@@ -163,9 +163,9 @@ def short_straddle(name,kite,instruments,existing_positions):
                         INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
                         VALUES (?, ?, ?,?,?);
                     '''
-                    data_to_insert = (tradingsymbol_ce, lot_size_ce*-1,instru_ce,ltp_ce,datetime.now())
+                    data_to_insert = (tradingsymbol_ce, lot_size_ce*-1*val,instru_ce,ltp_ce,datetime.now())
                     cursor.execute(insert_data_query, data_to_insert)
-                    data_to_insert = (tradingsymbol_pe, lot_size_pe*-1,instru_pe,ltp_pe,datetime.now())
+                    data_to_insert = (tradingsymbol_pe, lot_size_pe*-1*val,instru_pe,ltp_pe,datetime.now())
                     cursor.execute(insert_data_query, data_to_insert)
 
                     sqliteConnection.commit()
