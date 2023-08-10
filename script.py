@@ -12,12 +12,12 @@ login = pd.read_excel('login.xlsx')
 try:
     sqliteConnection = sqlite3.connect('SQLite_Python.db')
     cursor = sqliteConnection.cursor()
-    print("Database created and Successfully Connected to SQLite")
+    # print("Database created and Successfully Connected to SQLite")
 
     sqlite_select_Query = "select sqlite_version();"
     cursor.execute(sqlite_select_Query)
     record = cursor.fetchall()
-    print("SQLite Database Version is: ", record)
+    # print("SQLite Database Version is: ", record)
     cursor.close()
 
 except sqlite3.Error as error:
@@ -25,7 +25,7 @@ except sqlite3.Error as error:
 finally:
     if sqliteConnection:
         sqliteConnection.close()
-        print("The SQLite connection is closed")
+        # print("The SQLite connection is closed")
 
 # %%
 # Creating table
@@ -36,7 +36,7 @@ try:
 
     # Create a cursor to interact with the database
     cursor = sqliteConnection.cursor()
-    print("Database created and Successfully Connected to SQLite")
+    # print("Database created and Successfully Connected to SQLite")
 
     # 1. Create a table named 'portfolio' with columns: name, lot_size, atm, timestamp
     create_table_query = '''
@@ -49,7 +49,7 @@ try:
         );
     '''
     cursor.execute(create_table_query)
-    print("Table 'portfolio' created successfully")
+    # print("Table 'portfolio' created successfully")
     # Close the cursor
     cursor.close()
 except sqlite3.Error as error:
@@ -58,10 +58,11 @@ finally:
     # Close the database connection if it's open
     if sqliteConnection:
         sqliteConnection.close()
-        print("The SQLite connection is closed")
+        # print("The SQLite connection is closed")
 
 # %%
 print('Starting Short Straddle Bot')
+ins = {}
 for index, row in login.iterrows():
     api_key = row['apikey']
     api_secret = row['apisecret']
@@ -71,14 +72,12 @@ for index, row in login.iterrows():
     request_token = input('Please Enter the Request Token :')
     data = kite.generate_session(request_token,api_secret=api_secret)
     access_token = data["access_token"]
-    secrets = {
-        'api_key': api_key,
-        'api_secret': api_secret,
-        'access_token': access_token
-    }
+    row['access_token']=access_token
+    ins[row['name']]=kite
 
+for index, row in login.iterrows():
+    kite = ins[row['name']]
     instruments = kite.instruments()
-
     while True:
         if datetime.now().time() != datetime.strptime('05:30', '%H:%M').time():
             existing_positions = kite.positions()['net']
