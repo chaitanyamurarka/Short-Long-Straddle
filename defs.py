@@ -139,10 +139,13 @@ def short_straddle(name,val,kite,instruments,existing_positions):
         if net_quant_zero(kite,name):
             ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
             atm = None  # Initialize ATM to None
+            diff = None
             for i in instruments:
                 if i['name'] == name:
-                    if atm is None or abs(float(i['strike']) - ltp) < abs(float(atm - ltp)):
-                        atm = i['strike']
+                    if i['expiry'] == last_thursday_date_dt:
+                        if atm is None or abs(float(i['strike']) - ltp) < diff:
+                            atm = i['strike']
+                            diff = abs(float(atm - ltp))
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,atm)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')

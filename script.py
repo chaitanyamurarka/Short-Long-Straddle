@@ -80,21 +80,21 @@ for index, row in login.iterrows():
 
 # Assuming you have imported symbols and defined the short_straddle function
 
-def process_row(row):
+def process_row(row,instruments):
     kite = ins[row['name']]
-    instruments = kite.instruments()
     existing_positions = kite.positions()['net']
-
     for key, val in symbols[row['name']].items():
         short_straddle(key[4:], val, kite, instruments, existing_positions)
 
 
 # Use a ThreadPoolExecutor for managing concurrent processing
 with ThreadPoolExecutor(max_workers=4) as executor:
+    instruments = kite.instruments()
+    # del kite
     while True:
         if datetime.now().time() >= datetime.strptime('05:30', '%H:%M').time():
             # Process each row concurrently
-            futures = [executor.submit(process_row, row) for index, row in login.iterrows()]
+            futures = [executor.submit(process_row, row,instruments) for index, row in login.iterrows()]
             # Wait for all tasks to complete
             for future in futures:
                 future.result()
