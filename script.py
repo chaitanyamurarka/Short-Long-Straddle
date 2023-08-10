@@ -65,10 +65,11 @@ finally:
 # %%
 print('Starting Short Straddle Bot')
 ins = {}
+symbols = {}
 for index, row in login.iterrows():
     api_key = row['apikey']
     api_secret = row['apisecret']
-    symbols = eval(row['Stock'])
+    symbols[row['name']] = eval(row['Stock'])
     kite = KiteConnect(api_key=api_key)
     print('Please Login and Access your Request Token for',row['name'],kite.login_url())
     request_token = input('Please Enter the Request Token :')
@@ -77,7 +78,6 @@ for index, row in login.iterrows():
     row['access_token']=access_token
     ins[row['name']]=kite
 
-
 # Assuming you have imported symbols and defined the short_straddle function
 
 def process_row(row):
@@ -85,7 +85,7 @@ def process_row(row):
     instruments = kite.instruments()
     existing_positions = kite.positions()['net']
 
-    for key, val in symbols.items():
+    for key, val in symbols[row['name']].items():
         short_straddle(key[4:], val, kite, instruments, existing_positions)
 
 
