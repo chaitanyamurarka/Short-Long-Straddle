@@ -34,14 +34,17 @@ def net_quant_zero(kite,name):
             cursor.close()
             return True
         elif len(rows)>0:
-            p = True
+            quan = 0
             for row in rows:
                 if name in str(row[0]):
-                    if row[1] != 0:
-                        cursor.close()
-                        p = False
-            return p
-                
+                    quan += row[1]
+            if quan == 0:
+                cursor.close()
+                return True
+            else:
+                cursor.close()
+                return False
+            
         # Close the cursor
         cursor.close()
 
@@ -205,32 +208,63 @@ def short_straddle(name,val,kite,instruments,existing_positions):
         
             for position in rows:
                 if get_name_from_instrument_token(instruments,position[2]) == name and position[1] < 0 and 'CE' in position[0]:  # Assuming short positions
-                    instru_ce = position[2]
-                    exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
-                    instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp)
-                    sell_ce = position[3]
-                    sell_pe = get_sell_pe_from_ce(rows,name)
-                    ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
-                    ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                    if (
-                        (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
-                    or (
-                        datetime.now().today().strftime('%A') == 'Friday'  # Check if it's a Friday
-                        and datetime.now().time() >= datetime.strptime('14:00', '%H:%M').time()
-                    )
-                    or
-                    (
-                        (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
-                    )):
-                        print('')
-                        # print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                        # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                        #             KiteConnect.ORDER_TYPE_MARKET)
-                        # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                        #             KiteConnect.ORDER_TYPE_MARKET)
-                    # else:
-                    #     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                    break
+                    quan = 0
+                    for lol in rows:
+                        if lol[0]==position[0]:
+                            quan += lol[1]
+                    if quan < 0:
+                        instru_ce = position[2]
+                        exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
+                        instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp)
+                        sell_ce = position[3]
+                        sell_pe = get_sell_pe_from_ce(rows,name)
+                        ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
+                        ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
+                        if (
+                            (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
+                        or (
+                            int(datetime.now().today().strftime('%d')) == last_friday  # Check if it's a Friday
+                            and datetime.now().time() >= datetime.strptime('14:00', '%H:%M').time()
+                        )
+                        or
+                        (
+                            # (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
+                            (ltp_ce <= sell_ce*0.95) or (ltp_pe <= sell_pe*0.95) or (ltp_ce >= sell_ce*1.05) or (ltp_pe >= sell_pe*1.05)
+                        )):
+                            try:
+                                print(f'\nExiting SHORT STRADDLE FOR \n{position[0]} Of Quantity {position[1]} \nand\n{trad_pe} of Quantity {position[1]}')
+                                sqliteConnection = sqlite3.connect('SQLite_Python.db')
+                                cursor = sqliteConnection.cursor()
+                                # print("Database created and Successfully Connected to SQLite")
+                                
+                                insert_data_query = '''
+                                    INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
+                                    VALUES (?, ?, ?,?,?);
+                                '''
+                                data_to_insert = (position[0], position[1]*-1,instru_ce,ltp_ce,datetime.now())
+                                cursor.execute(insert_data_query, data_to_insert)
+                                data_to_insert = (trad_pe, position[1]*-1,instru_pe,ltp_pe,datetime.now())
+                                cursor.execute(insert_data_query, data_to_insert)
+
+                                sqliteConnection.commit()
+                                print("Row of data inserted into 'portfolio' table")
+                                # Close the cursor
+                                cursor.close()
+                            except sqlite3.Error as error:
+                                print("Error while working with SQLite:", error)
+                            finally:
+                                # Close the database connection if it's open
+                                if sqliteConnection:
+                                    sqliteConnection.close()
+                            # print("The SQLite connection is closed")                         
+                            # print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
+                            # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                            #             KiteConnect.ORDER_TYPE_MARKET)
+                            # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                            #             KiteConnect.ORDER_TYPE_MARKET)
+                        # else:
+                        #     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
+                        break
                 
             cursor.close()
 
