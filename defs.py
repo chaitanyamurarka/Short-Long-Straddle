@@ -216,7 +216,9 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                         instru_ce = position[2]
                         exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
                         instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp)
-                        sell_ce = position[3]
+                        for lol in rows:
+                            if lol[0]==position[0]:
+                                sell_ce = position[3]
                         sell_pe = get_sell_pe_from_ce(rows,name)
                         ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                         ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
