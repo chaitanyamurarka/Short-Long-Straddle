@@ -90,7 +90,7 @@ def process_row(row,instruments):
 # Use a ThreadPoolExecutor for managing concurrent processing
 with ThreadPoolExecutor(max_workers=4) as executor:
     instruments = kite.instruments()
-    # del kite
+    del kite
     while True:
         if datetime.now().time() >= datetime.strptime('05:30', '%H:%M').time():
             # Process each row concurrently
