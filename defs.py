@@ -2,6 +2,9 @@ import logging
 from datetime import datetime
 import calendar
 import sqlite3
+import pytz
+  
+IST = pytz.timezone('Asia/Kolkata')
 
 def net_quant_zero(kite,name):
     # if len(kite.positions()['net'])==0 :
@@ -115,8 +118,9 @@ def get_sell_pe_from_ce(existing_positions,name):
         
 def cal_dates():
     # Calculate the dae of last friday and thursday of the current month
-    year = int(datetime.now().today().strftime('%Y'))
-    month = int(datetime.now().today().strftime('%m'))
+    IST = pytz.timezone('Asia/Kolkata')
+    year = int(datetime.now(IST).today().strftime('%Y'))
+    month = int(datetime.now(IST).today().strftime('%m'))
     last_day = calendar.monthrange(year, month)[1]
     last_weekday = calendar.weekday(year, month, last_day)
     last_thursday = last_day - ((7 - (3 - last_weekday)) % 7)
@@ -129,14 +133,15 @@ def cal_dates():
     return first_friday,last_friday,last_thursday_date_dt
 
 def short_straddle(name,val,kite,instruments,existing_positions):
+    IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade
     if (
-        datetime.now().time() >= datetime.strptime('09:30', '%H:%M').time()
+        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time()
         and (
-            (int(datetime.now().today().strftime('%d')) >= int(first_friday) and int(datetime.now().today().strftime('%d')) < last_friday)
+            (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) < last_friday)
         or 
-        (int(datetime.now().today().strftime('%d')) == last_friday and datetime.now().time() <= datetime.strptime('14:00', '%H:%M').time())
+        (int(datetime.now(IST).today().strftime('%d')) == last_friday and datetime.now(IST).time() <= datetime.strptime('14:00', '%H:%M').time())
         )
         ):
         if net_quant_zero(kite,name):
@@ -169,9 +174,9 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                         INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
                         VALUES (?, ?, ?,?,?);
                     '''
-                    data_to_insert = (tradingsymbol_ce, lot_size_ce*-1*val,instru_ce,ltp_ce,datetime.now())
+                    data_to_insert = (tradingsymbol_ce, lot_size_ce*-1*val,instru_ce,ltp_ce,datetime.now(IST))
                     cursor.execute(insert_data_query, data_to_insert)
-                    data_to_insert = (tradingsymbol_pe, lot_size_pe*-1*val,instru_pe,ltp_pe,datetime.now())
+                    data_to_insert = (tradingsymbol_pe, lot_size_pe*-1*val,instru_pe,ltp_pe,datetime.now(IST))
                     cursor.execute(insert_data_query, data_to_insert)
 
                     sqliteConnection.commit()
@@ -189,7 +194,7 @@ def short_straddle(name,val,kite,instruments,existing_positions):
         #     print(f"\n{name} Net Quantity Not Zero")
 
     # Check if it's time to exit the trade
-    if datetime.now().time() >= datetime.strptime('09:25', '%H:%M').time():
+    if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
         # Fetching all entries from table
         try:
             # Connect to the SQLite database or create it if not exists
@@ -225,8 +230,8 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                         if (
                             (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                         or (
-                            int(datetime.now().today().strftime('%d')) == last_friday  # Check if it's a Friday
-                            and datetime.now().time() >= datetime.strptime('14:00', '%H:%M').time()
+                            int(datetime.now(IST).today().strftime('%d')) == last_friday  # Check if it's a Friday
+                            and datetime.now(IST).time() >= datetime.strptime('14:00', '%H:%M').time()
                         )
                         or
                         (
@@ -243,9 +248,9 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                                     INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
                                     VALUES (?, ?, ?,?,?);
                                 '''
-                                data_to_insert = (position[0], position[1]*-1,instru_ce,ltp_ce,datetime.now())
+                                data_to_insert = (position[0], position[1]*-1,instru_ce,ltp_ce,datetime.now(IST))
                                 cursor.execute(insert_data_query, data_to_insert)
-                                data_to_insert = (trad_pe, position[1]*-1,instru_pe,ltp_pe,datetime.now())
+                                data_to_insert = (trad_pe, position[1]*-1,instru_pe,ltp_pe,datetime.now(IST))
                                 cursor.execute(insert_data_query, data_to_insert)
 
                                 sqliteConnection.commit()

@@ -8,6 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from defs import net_quant_zero,get_symbol_lotsize,place_order,get_expiry_date_and_strike_from_instrument_token,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle
 import pandas as pd
 login = pd.read_excel('login.xlsx')
+import pytz
+IST = pytz.timezone('Asia/Kolkata')
 
 # %%
 # Checking connection
@@ -105,7 +107,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
     instruments = kite.instruments()
     del kite
     while True:
-        if datetime.now().time() >= datetime.strptime('05:30', '%H:%M').time():
+        if datetime.now(IST).time() >= datetime.strptime('05:30', '%H:%M').time():
             # Process each row concurrently
             futures = [executor.submit(process_row, row,instruments) for index, row in login.iterrows()]
             # Wait for all tasks to complete

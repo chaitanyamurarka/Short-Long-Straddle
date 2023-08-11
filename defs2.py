@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 import calendar
+import pytz
 
 def net_quant_zero(existing_positions,name):
     if len(existing_positions)==0 :
@@ -68,9 +69,10 @@ def get_sell_pe_from_ce(existing_positions,name):
             return position['sell_price']
   
 def cal_dates():
+    IST = pytz.timezone('Asia/Kolkata')
     # Calculate the dae of last friday and thursday of the current month
-    year = int(datetime.now().today().strftime('%Y'))
-    month = int(datetime.now().today().strftime('%m'))
+    year = int(datetime.now(IST).today().strftime('%Y'))
+    month = int(datetime.now(IST).today().strftime('%m'))
     last_day = calendar.monthrange(year, month)[1]
     last_weekday = calendar.weekday(year, month, last_day)
     last_thursday = last_day - ((7 - (3 - last_weekday)) % 7)
@@ -83,14 +85,15 @@ def cal_dates():
     return first_friday,last_friday,last_thursday_date_dt
 
 def short_straddle(name,val,kite,instruments,existing_positions):
+    IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade
     if (
-        datetime.now().time() >= datetime.strptime('09:30', '%H:%M').time()
+        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time()
         and (
-            (int(datetime.now().today().strftime('%d')) >= int(first_friday) and int(datetime.now().today().strftime('%d')) < last_friday)
+            (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) < last_friday)
         or 
-        (int(datetime.now().today().strftime('%d')) == last_friday and datetime.now().time() <= datetime.strptime('14:00', '%H:%M').time())
+        (int(datetime.now(IST).today().strftime('%d')) == last_friday and datetime.now(IST).time() <= datetime.strptime('14:00', '%H:%M').time())
         )
         ):
         if net_quant_zero(existing_positions,name):
@@ -111,7 +114,7 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                 #             KiteConnect.ORDER_TYPE_MARKET)
 
     # Check if it's time to exit the trade
-    if datetime.now().time() >= datetime.strptime('09:25', '%H:%M').time():
+    if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
         for position in existing_positions:
             if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] < 0 and 'CE' in position['tradingsymbol']:  # Assuming short positions
                 instru_ce = position[2]
@@ -124,8 +127,8 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                 if (
                     (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                 or (
-                    int(datetime.now().today().strftime('%d')) == last_friday
-                    and datetime.now().time() >= datetime.strptime('14:00', '%H:%M').time()
+                    int(datetime.now(IST).today().strftime('%d')) == last_friday
+                    and datetime.now(IST).time() >= datetime.strptime('14:00', '%H:%M').time()
                 )
                 
                 or
