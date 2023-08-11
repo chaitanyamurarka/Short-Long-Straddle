@@ -80,11 +80,24 @@ for index, row in login.iterrows():
 
 # Assuming you have imported symbols and defined the short_straddle function
 
+def check_open_order(kite,name):
+    order = kite.orders()
+    if len(order)==0:
+        return True
+    else:
+        p = True
+        for i in kite.orders()['data']:
+            if name in i['tradingsymbol']:
+                if i['status']=='OPEN':
+                    p = False
+        return p
+
 def process_row(row,instruments):
     kite = ins[row['name']]
     existing_positions = kite.positions()['net']
     for key, val in symbols[row['name']].items():
-        short_straddle(key[4:], val, kite, instruments, existing_positions)
+        if check_open_order(kite,key[4:]):
+            short_straddle(key[4:], val, kite, instruments, existing_positions)
 
 
 # Use a ThreadPoolExecutor for managing concurrent processing

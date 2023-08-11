@@ -96,10 +96,12 @@ def short_straddle(name,val,kite,instruments,existing_positions):
         if net_quant_zero(existing_positions,name):
             ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
             atm = None  # Initialize ATM to None
+            diff = None
             for i in instruments:
                 if i['name'] == name:
-                    if atm is None or abs(float(i['strike']) - ltp) < abs(float(atm - ltp)):
+                    if atm is None or abs(float(i['strike']) - ltp) < diff:
                         atm = i['strike']
+                        diff = abs(float(atm - ltp))
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,atm)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 print(f'\nENTERING SHORT STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
@@ -122,7 +124,7 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                 if (
                     (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                 or (
-                    datetime.now().today().strftime('%A') == 'Friday'  # Check if it's a Friday
+                    int(datetime.now().today().strftime('%d')) == last_friday
                     and datetime.now().time() >= datetime.strptime('14:00', '%H:%M').time()
                 )
                 
