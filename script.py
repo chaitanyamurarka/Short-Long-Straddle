@@ -1,16 +1,18 @@
-from kiteconnect import KiteConnect
-from datetime import datetime
 import sqlite3
 import time
-import time
-from concurrent.futures import ThreadPoolExecutor
 import calendar
-from defs import net_quant_zero,get_symbol_lotsize,place_order,get_expiry_date_and_strike_from_instrument_token,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle
-import pandas as pd
-login = pd.read_excel('login.xlsx')
 import pytz
-IST = pytz.timezone('Asia/Kolkata')
 import logging
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
+from kiteconnect import KiteConnect
+from datetime import datetime
+from defs import net_quant_zero,get_symbol_lotsize,place_order,get_expiry_date_and_strike_from_instrument_token,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle
+
+
+
+login = pd.read_excel('login.xlsx')
+IST = pytz.timezone('Asia/Kolkata')
 # Generate a unique log file name with a timestamp
 log_file = f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 logging.basicConfig(filename=log_file, level=logging.INFO,
@@ -95,8 +97,6 @@ for index, row in login.iterrows():
     print('Please Login and Access your Request Token for',row['name'],kite.login_url())
     request_token = input('Please Enter the Request Token :')
     data = kite.generate_session(request_token,api_secret=api_secret)
-    access_token = data["access_token"]
-    row['access_token']=access_token
     session[row['name']]=kite
     instrums = []
     for i in kite.instruments():
