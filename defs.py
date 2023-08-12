@@ -113,11 +113,6 @@ def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product
     except Exception as e:
         logging.info('Order placement failed: %s', e.message)
 
-def get_expiry_date_and_strike_from_instrument_token(instruments,instrument_token):
-    for instrument in instruments:
-        if int(instrument['instrument_token']) == int(instrument_token):
-            return instrument['expiry'],instrument['strike']
-    return None
 
 def get_name_from_instrument_token(instruments,instrument_token):
     for instrument in instruments:
@@ -229,7 +224,6 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                             quan += lol[1]
                     if quan < 0:
                         instru_ce = position[2]
-                        exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
                         instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(rows,name)
                         for lol in rows:
                             if lol[0]==position[0]:
