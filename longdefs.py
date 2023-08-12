@@ -150,7 +150,7 @@ def cal_dates():
     first_friday = 1 + days_to_add
     return first_friday,last_friday,last_thursday_date_dt
 
-def long_straddle(name,val,kite,instruments,existing_positions):
+def short_straddle(name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     second_last_thursday = last_friday-8
@@ -164,7 +164,11 @@ def long_straddle(name,val,kite,instruments,existing_positions):
         if net_quant_zero(kite,name):
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                print(f'\nENTERING Long STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
+                print(f'\nENTERING Long STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
+
+                ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
+                ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
+
                 try:
                     sqliteConnection = sqlite3.connect('SQLite_Python.db')
                     cursor = sqliteConnection.cursor()
@@ -195,7 +199,7 @@ def long_straddle(name,val,kite,instruments,existing_positions):
 
     # Check if it's time to exit the trade
     if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
-                # Fetching all entries from table
+        # Fetching all entries from table
         try:
             # Connect to the SQLite database or create it if not exists
             sqliteConnection = sqlite3.connect('SQLite_Python.db')
@@ -210,7 +214,7 @@ def long_straddle(name,val,kite,instruments,existing_positions):
             '''
             cursor.execute(fetch_all_query)
             rows = cursor.fetchall()
-            
+        
             for position in rows:
                 if get_name_from_instrument_token(instruments,position[2]) == name and position[1] < 0 and 'CE' in position[0]:  # Assuming short positions
                     quan = 0
@@ -226,10 +230,11 @@ def long_straddle(name,val,kite,instruments,existing_positions):
                         sell_pe = get_sell_pe_from_ce(rows,name)
                         ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                         ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
+                        print(ltp_ce,ltp_pe)
                         if (
-                            (ltp_ce <= 0.65*sell_ce and ltp_ce <= 0.65*sell_ce)
+                            (ltp_pe <= 0.65*sell_pe and ltp_ce <= 0.65*sell_ce)
                             or
-                            ltp_ce >= 3*sell_ce
+                            ltp_pe >= 3*sell_pe
                             or
                             ltp_ce >= 3*sell_ce
                         ):
@@ -266,7 +271,6 @@ def long_straddle(name,val,kite,instruments,existing_positions):
                             #             KiteConnect.ORDER_TYPE_MARKET)
                         # else:
                         #     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                                    
                         break
             if sqliteConnection:    
                 cursor.close()
