@@ -3,8 +3,8 @@ from datetime import datetime
 import sqlite3
 import time
 import time
-from datetime import datetime, time as dt_time
 from concurrent.futures import ThreadPoolExecutor
+import calendar
 from defs import net_quant_zero,get_symbol_lotsize,place_order,get_expiry_date_and_strike_from_instrument_token,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle
 import pandas as pd
 login = pd.read_excel('login.xlsx')
@@ -70,20 +70,40 @@ finally:
         # print("The SQLite connection is closed")
 
 # %%
+def cal_dates():
+    IST = pytz.timezone('Asia/Kolkata')
+    # Calculate the dae of last friday and thursday of the current month
+    year = int(datetime.now(IST).today().strftime('%Y'))
+    month = int(datetime.now(IST).today().strftime('%m'))
+    last_day = calendar.monthrange(year, month)[1]
+    last_weekday = calendar.weekday(year, month, last_day)
+    last_thursday = last_day - ((7 - (3 - last_weekday)) % 7)
+    last_thursday_date = datetime(year, month, last_thursday).strftime('%d-%m-%Y')
+    last_thursday_date_dt = datetime.strptime(last_thursday_date,'%d-%m-%Y').date()
+    return last_thursday_date_dt
+
 print('Starting Short Straddle Bot')
-ins = {}
-symbols = {}
+session = {}
+stock_and_quan = {}
+usr_instrums = {}
+
 for index, row in login.iterrows():
     api_key = row['apikey']
     api_secret = row['apisecret']
-    symbols[row['name']] = eval(row['Stock'])
+    stock_and_quan[row['name']] = eval(row['Stock'])
     kite = KiteConnect(api_key=api_key)
     print('Please Login and Access your Request Token for',row['name'],kite.login_url())
     request_token = input('Please Enter the Request Token :')
     data = kite.generate_session(request_token,api_secret=api_secret)
     access_token = data["access_token"]
     row['access_token']=access_token
-    ins[row['name']]=kite
+    session[row['name']]=kite
+    instrums = []
+    for i in kite.instruments():
+        if i['name'] in eval(row['Stock']).keys():
+            if i['expiry'] == cal_dates():
+                instrums.append(i)
+    usr_instrums[row['name']] = instrums
 
 # Assuming you have imported symbols and defined the short_straddle function
 
@@ -99,22 +119,21 @@ def check_open_order(kite,name):
                     p = False
         return p
 
-def process_row(row,instruments):
-    kite = ins[row['name']]
+def process_row(row):
+    kite = session[row['name']]
     existing_positions = kite.positions()['net']
-    for key, val in symbols[row['name']].items():
-        if check_open_order(kite,key[4:]):
-            short_straddle(key[4:], val, kite, instruments, existing_positions)
+    instruments = usr_instrums[row['name']]
+    for key, val in stock_and_quan[row['name']].items():
+        if check_open_order(kite,key):
+            short_straddle(key, val, kite, instruments, existing_positions)
 
 
 # Use a ThreadPoolExecutor for managing concurrent processing
 with ThreadPoolExecutor(max_workers=4) as executor:
-    instruments = kite.instruments()
-    del kite
     while True:
         if datetime.now(IST).time() >= datetime.strptime('05:30', '%H:%M').time():
             # Process each row concurrently
-            futures = [executor.submit(process_row, row,instruments) for index, row in login.iterrows()]
+            futures = [executor.submit(process_row, row) for index, row in login.iterrows()]
             # Wait for all tasks to complete
             for future in futures:
                 future.result()

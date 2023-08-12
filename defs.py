@@ -3,6 +3,7 @@ from datetime import datetime
 import calendar
 import sqlite3
 import pytz
+import time
   
 IST = pytz.timezone('Asia/Kolkata')
 
@@ -59,21 +60,40 @@ def net_quant_zero(kite,name):
             sqliteConnection.close()
             # print("The SQLite connection is closed")
 
-def get_symbol_lotsize(i,name,last_thursday_date_dt,strike):
+def get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
+    ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
+    strike = None  # Initialize ATM to None
+    diff = None
     tradingsymbol_ce=None
     lot_size_ce=None
     tradingsymbol_pe=None
     lot_size_pe = None
-    # i = kite.instruments()
-    for j in i:
-        if j['name'] == name and j['expiry'] == last_thursday_date_dt and j['strike'] == strike and j['instrument_type']=='CE': 
-            tradingsymbol_ce = j['tradingsymbol']
-            lot_size_ce = j['lot_size']
-            instru_ce = j['instrument_token']
-        if j['name'] == name and j['expiry'] == last_thursday_date_dt and j['strike'] == strike and j['instrument_type']=='PE': 
-            tradingsymbol_pe = j['tradingsymbol']
-            lot_size_pe = j['lot_size']   
-            instru_pe = j['instrument_token']
+    for i in instruments:
+        if i['instrument_type']=='CE':
+            if i['name'] == name:
+                if i['expiry'] == last_thursday_date_dt:
+                    if strike is None or abs(float(i['strike']) - ltp) < diff:
+                        strike = i['strike']
+                        diff = abs(float(strike - ltp))
+                        tradingsymbol_ce = i['tradingsymbol']
+                        lot_size_ce = i['lot_size']
+                        instru_ce = i['instrument_token']
+    ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
+    pe_ltp = None
+    diff = None
+    for j in instruments:
+        if j['name'] == name:
+            if j['expiry'] == last_thursday_date_dt:
+                if j['instrument_type']=='PE':
+                    price = kite.ltp('NFO:'+j['tradingsymbol'])['NFO:'+j['tradingsymbol']]['last_price']
+                    if price != 0:
+                        if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
+                            pe_ltp = price
+                            diff = abs(float(price - ce_ltp))
+                            tradingsymbol_pe = j['tradingsymbol']
+                            lot_size_pe = j['lot_size']   
+                            instru_pe = j['instrument_token']
+        time.sleep(0.5)
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product, orderType):
@@ -106,10 +126,10 @@ def get_name_from_instrument_token(instruments,instrument_token):
 
     return None
 
-def get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp):
-    for instrument in instruments:
-        if instrument['name'] == name and instrument['expiry'] == exp and instrument['strike'] == stri and instrument['instrument_type']=='PE':
-            return instrument['instrument_token'],instrument['tradingsymbol']
+def get_instru_tradesymbol_pe_from_ce(rows,name):
+    for row in rows:
+        if name in str(row[0]) and 'PE' in str(row[0]):
+            return row[2],row[0]
         
 def get_sell_pe_from_ce(existing_positions,name):
     for position in existing_positions:
@@ -145,23 +165,13 @@ def short_straddle(name,val,kite,instruments,existing_positions):
         )
         ):
         if net_quant_zero(kite,name):
-            ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
-            atm = None  # Initialize ATM to None
-            diff = None
-            for i in instruments:
-                if i['name'] == name:
-                    if i['expiry'] == last_thursday_date_dt:
-                        if atm is None or abs(float(i['strike']) - ltp) < diff:
-                            atm = i['strike']
-                            diff = abs(float(atm - ltp))
-            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,atm)
+            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
                 # place_order(kite,tradingsymbol_ce, 0, lot_size_ce, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                 # KiteConnect.ORDER_TYPE_MARKET)
                 # place_order(kite,tradingsymbol_pe, 0, lot_size_pe, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                 #             KiteConnect.ORDER_TYPE_MARKET)
-                # 2. Insert a row of data into the 'portfolio' table
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
 
@@ -220,13 +230,14 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                     if quan < 0:
                         instru_ce = position[2]
                         exp,stri = get_expiry_date_and_strike_from_instrument_token(instruments,instru_ce)
-                        instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(instruments,name,stri,exp)
+                        instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(rows,name)
                         for lol in rows:
                             if lol[0]==position[0]:
                                 sell_ce = position[3]
                         sell_pe = get_sell_pe_from_ce(rows,name)
                         ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                         ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
+                        print(ltp_ce,ltp_pe)
                         if (
                             (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                         or (
@@ -272,8 +283,8 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                         # else:
                         #     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
                         break
-                
-            cursor.close()
+            if sqliteConnection:    
+                cursor.close()
 
         except sqlite3.Error as error:
             print("Error while working with SQLite:", error)
