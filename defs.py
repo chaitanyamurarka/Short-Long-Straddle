@@ -62,6 +62,7 @@ def net_quant_zero(kite,name):
             # print("The SQLite connection is closed")
 
 def get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
+    IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
     diff = None
@@ -94,7 +95,8 @@ def get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
                             tradingsymbol_pe = j['tradingsymbol']
                             lot_size_pe = j['lot_size']   
                             instru_pe = j['instrument_token']
-        time.sleep(0.5)
+        time.sleep(0.3)
+        logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product, orderType):
@@ -164,10 +166,7 @@ def short_straddle(name,val,kite,instruments,existing_positions):
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
-                place_order(kite,tradingsymbol_ce, 0, lot_size_ce, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                KiteConnect.ORDER_TYPE_MARKET)
-                place_order(kite,tradingsymbol_pe, 0, lot_size_pe, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                            KiteConnect.ORDER_TYPE_MARKET)
+
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
 
