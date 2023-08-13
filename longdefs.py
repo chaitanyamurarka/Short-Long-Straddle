@@ -187,9 +187,9 @@ def check_rentry_long_straddle(existing_positions,name,client):
                 for index, row in data.iterrows():
                     if row['name']==client:
                         status = eval(row['Long Straddle Status'])
-                        status[name] == 1
-                        row['Long Straddle Status']=status
-                        pd.DataFrame.to_excel('login.xlsx')
+                        status[name] = 1
+                        data.loc[index, 'Long Straddle Status'] = str(status)
+                        data.DataFrame.to_excel('login.xlsx')
         return p
     
 
