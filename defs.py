@@ -63,7 +63,7 @@ def net_quant_zero(kite,name):
             # print("The SQLite connection is closed")
 
 def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
-    print('Performing Short for:',name,":",len(instruments))
+    print('Scanning Entry Short Straddle Option Chain for:',name,":",len(instruments))
     IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
@@ -76,12 +76,12 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
         if i['instrument_type']=='CE':
             if i['name'] == name:
                 if i['expiry'] == last_thursday_date_dt:
-                    if strike is None or abs(float(i['strike']) - ltp) < diff:
-                        strike = i['strike']
-                        diff = abs(float(strike - ltp))
-                        tradingsymbol_ce = i['tradingsymbol']
-                        lot_size_ce = i['lot_size']
-                        instru_ce = i['instrument_token']
+                        if strike is None or abs(float(i['strike']) - ltp) < diff:
+                            strike = i['strike']
+                            diff = abs(float(strike - ltp))
+                            tradingsymbol_ce = i['tradingsymbol']
+                            lot_size_ce = i['lot_size']
+                            instru_ce = i['instrument_token']
     ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
     pe_ltp = None
     diff = None
@@ -89,20 +89,22 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
         if j['name'] == name:
             if j['expiry'] == last_thursday_date_dt:
                 if j['instrument_type']=='PE':
-                    price = kite.ltp('NFO:'+j['tradingsymbol'])['NFO:'+j['tradingsymbol']]['last_price']
-                    if price != 0:
-                        if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
-                            pe_ltp = price
-                            diff = abs(float(price - ce_ltp))
-                            tradingsymbol_pe = j['tradingsymbol']
-                            lot_size_pe = j['lot_size']   
-                            instru_pe = j['instrument_token']
-        time.sleep(0.3)
-        logging.info(datetime.now(IST))
+                    ltp_data = kite.ltp('NFO:'+j['tradingsymbol'])
+                    if ltp_data:
+                        price = ltp_data['NFO:'+j['tradingsymbol']]['last_price']
+                        if price != 0:
+                            if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
+                                pe_ltp = price
+                                diff = abs(float(price - ce_ltp))
+                                tradingsymbol_pe = j['tradingsymbol']
+                                lot_size_pe = j['lot_size']   
+                                instru_pe = j['instrument_token']
+                        time.sleep(0.3)
+                        logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
-    print('Performing Long for:',name,":",len(instruments))
+    print('Scanning Entry Long Straddle Option Chain for:',name)
     IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
@@ -125,19 +127,22 @@ def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     pe_ltp = None
     diff = None
     for j in instruments:
-        if j['name'] == name:
+        if j['name'] == name and j['tradingsymbol']!='HINDCOPPER23AUG173PE':
             if j['expiry'] == last_thursday_date_dt:
                 if j['instrument_type']=='PE':
-                    price = kite.ltp('NFO:'+j['tradingsymbol'])['NFO:'+j['tradingsymbol']]['last_price']
-                    if price != 0:
-                        if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
-                            pe_ltp = price
-                            diff = abs(float(price - ce_ltp))
-                            tradingsymbol_pe = j['tradingsymbol']
-                            lot_size_pe = j['lot_size']   
-                            instru_pe = j['instrument_token']
-        time.sleep(0.3)
-        logging.info(datetime.now(IST))
+                    ltp_data = kite.ltp('NFO:'+j['tradingsymbol'])
+                    if ltp_data:
+                        price = ltp_data['NFO:'+j['tradingsymbol']]['last_price']
+                        print(j['tradingsymbol'],j['last_price'],price)
+                        if price != 0:
+                            if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
+                                pe_ltp = price
+                                diff = abs(float(price - ce_ltp))
+                                tradingsymbol_pe = j['tradingsymbol']
+                                lot_size_pe = j['lot_size']   
+                                instru_pe = j['instrument_token']
+                        time.sleep(0.3)
+                        logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product, orderType):
