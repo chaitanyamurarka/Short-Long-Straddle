@@ -106,10 +106,10 @@ def cal_dates():
     first_friday = 1 + days_to_add
     return first_friday,last_friday,last_thursday_date_dt
 
-def check_rentry_long_straddle(existing_positions,name):
+def check_rentry_long_straddle(existing_positions,name,client):
     data = pd.read_excel('login.xlsx')
     for index, row in data.iterrows():
-            if row['name']==name:
+            if row['name']==client:
                 if row['Long Straddle Status']==1:
                     return False
     if len(existing_positions)==0 :
@@ -120,12 +120,12 @@ def check_rentry_long_straddle(existing_positions,name):
             if name in i['tradingsymbol']:
                 p = False
                 for index, row in data.iterrows():
-                    if row['name']==name:
+                    if row['name']==client:
                         row['Long Straddle Status']==1
                         pd.DataFrame.to_excel('login.xlsx')
         return p
 
-def long_straddle(name,val,kite,instruments,existing_positions):
+def long_straddle(client,name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     second_last_thursday = last_friday-8
@@ -136,7 +136,7 @@ def long_straddle(name,val,kite,instruments,existing_positions):
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) <= second_last_thursday)
         )
         ):
-        if check_rentry_long_straddle(existing_positions,name):
+        if check_rentry_long_straddle(existing_positions,name,client):
             if net_quant_zero(existing_positions,name):
                 tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
                 if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):

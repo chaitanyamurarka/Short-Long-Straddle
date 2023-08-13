@@ -150,7 +150,7 @@ def cal_dates():
     first_friday = 1 + days_to_add
     return first_friday,last_friday,last_thursday_date_dt
 
-def short_straddle(name,val,kite,instruments,existing_positions):
+def short_straddle(client,name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade

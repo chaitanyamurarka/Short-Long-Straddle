@@ -129,7 +129,7 @@ def process_row(row):
     instruments = usr_instrums[row['name']]
     for key, val in short_stock_and_quan[row['name']].items():
         if check_open_order(kite,key):
-            short_straddle(key, val, kite, instruments, usr_posi)
+            short_straddle(row['name'],key, val, kite, instruments, usr_posi)
             
 
 # Use a ThreadPoolExecutor for managing concurrent processing
