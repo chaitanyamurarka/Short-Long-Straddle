@@ -4,6 +4,7 @@ import calendar
 import pytz
 import time
 from kiteconnect import KiteConnect
+import pandas as pd
 
 
 def net_quant_zero(existing_positions,name):
@@ -154,3 +155,74 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 else:
                     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
                 break
+
+def check_rentry_long_straddle(existing_positions,name,client):
+    data = pd.read_excel('login.xlsx')
+    for index, row in data.iterrows():
+            if row['name']==client:
+                status = eval(row['Long Straddle Status'])
+                if name in status.keys():
+                    if status[name]==1:
+                        return False
+    if len(existing_positions)==0 :
+        return True
+    else:
+        p = True
+        for i in existing_positions:
+            if name in i['tradingsymbol']:
+                p = False
+                for index, row in data.iterrows():
+                    if row['name']==client:
+                        status = eval(row['Long Straddle Status'])
+                        status[name] = 1
+                        data.loc[index, 'Long Straddle Status'] = str(status)
+                        data.DataFrame.to_excel('login.xlsx')
+        return p
+
+def long_straddle(client,name,val,kite,instruments,existing_positions):
+    IST = pytz.timezone('Asia/Kolkata')
+    first_friday,last_friday,last_thursday_date_dt = cal_dates()
+    second_last_thursday = last_friday-8
+    # Check if it's time to enter the trade
+    if (
+        datetime.now(IST).time() >= datetime.strptime('15:25', '%H:%M').time()
+        and (
+            (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) <= second_last_thursday)
+        )
+        ):
+        if check_rentry_long_straddle(existing_positions,name,client):
+            if net_quant_zero(existing_positions,name):
+                tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
+                if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
+                    print(f'\nENTERING Long STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
+                    # place_order(kite,tradingsymbol_ce, 0, lot_size_ce*val, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    # KiteConnect.ORDER_TYPE_MARKET)
+                    # place_order(kite,tradingsymbol_pe, 0, lot_size_pe*val, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    #             KiteConnect.ORDER_TYPE_MARKET)
+
+    # Check if it's time to exit the trade
+    if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
+        for position in existing_positions:
+            if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] < 0 and 'CE' in position['tradingsymbol']:  # Assuming short positions
+                instru_ce = position['instrument_token']
+                instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(existing_positions,name)
+                sell_ce = position['sell_price']
+                sell_pe = get_sell_pe_from_ce(existing_positions,name)
+                ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
+                ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
+                print(ltp_ce,ltp_pe)
+                if (
+                    (ltp_pe <= 0.65*sell_pe and ltp_ce <= 0.65*sell_ce)
+                    or
+                    ltp_pe >= 3*sell_pe
+                    or
+                    ltp_ce >= 3*sell_ce
+                ):
+                    print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
+                    # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    #             KiteConnect.ORDER_TYPE_MARKET)
+                    # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    #             KiteConnect.ORDER_TYPE_MARKET)
+                else:
+                    print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
+            break
