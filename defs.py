@@ -62,7 +62,45 @@ def net_quant_zero(kite,name):
             sqliteConnection.close()
             # print("The SQLite connection is closed")
 
-def get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
+def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
+    IST = pytz.timezone('Asia/Kolkata')
+    ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
+    strike = None  # Initialize ATM to None
+    diff = None
+    tradingsymbol_ce=None
+    lot_size_ce=None
+    tradingsymbol_pe=None
+    lot_size_pe = None
+    for i in instruments:
+        if i['instrument_type']=='CE':
+            if i['name'] == name:
+                if i['expiry'] == last_thursday_date_dt:
+                    if strike is None or abs(float(i['strike']) - ltp) < diff:
+                        strike = i['strike']
+                        diff = abs(float(strike - ltp))
+                        tradingsymbol_ce = i['tradingsymbol']
+                        lot_size_ce = i['lot_size']
+                        instru_ce = i['instrument_token']
+    ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
+    pe_ltp = None
+    diff = None
+    for j in instruments:
+        if j['name'] == name:
+            if j['expiry'] == last_thursday_date_dt:
+                if j['instrument_type']=='PE':
+                    price = kite.ltp('NFO:'+j['tradingsymbol'])['NFO:'+j['tradingsymbol']]['last_price']
+                    if price != 0:
+                        if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
+                            pe_ltp = price
+                            diff = abs(float(price - ce_ltp))
+                            tradingsymbol_pe = j['tradingsymbol']
+                            lot_size_pe = j['lot_size']   
+                            instru_pe = j['instrument_token']
+        time.sleep(0.3)
+        logging.info(datetime.now(IST))
+    return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
+
+def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
@@ -164,7 +202,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
         )
         ):
         if net_quant_zero(kite,name):
-            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
+            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
 
@@ -326,7 +364,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
         ):
         if check_rentry_long_straddle(existing_positions,name,client):
             if net_quant_zero(kite,name):
-                tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
+                tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
                 if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                     print(f'\nENTERING Long STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
 
