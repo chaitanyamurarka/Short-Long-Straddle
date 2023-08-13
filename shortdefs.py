@@ -227,7 +227,7 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                         instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(rows,name)
                         for lol in rows:
                             if lol[0]==position[0]:
-                                sell_ce = position[3]
+                                sell_ce = lol[3]
                         sell_pe = get_sell_pe_from_ce(rows,name)
                         ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                         ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
@@ -276,7 +276,7 @@ def short_straddle(name,val,kite,instruments,existing_positions):
                             #             KiteConnect.ORDER_TYPE_MARKET)
                         # else:
                         #     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                        break
+                    break
             if sqliteConnection:    
                 cursor.close()
 
