@@ -106,12 +106,32 @@ def cal_dates():
     first_friday = 1 + days_to_add
     return first_friday,last_friday,last_thursday_date_dt
 
+# def check_rentry_long_straddle(existing_positions,name,client):
+#     data = pd.read_excel('login.xlsx')
+#     for index, row in data.iterrows():
+#             if row['name']==client:
+#                 if row['Long Straddle Status']==1:
+#                     return False
+#     if len(existing_positions)==0 :
+#         return True
+#     else:
+#         p = True
+#         for i in existing_positions:
+#             if name in i['tradingsymbol']:
+#                 p = False
+#                 for index, row in data.iterrows():
+#                     if row['name']==client:
+#                         row['Long Straddle Status']==1
+#                         pd.DataFrame.to_excel('login.xlsx')
+#         return p
 def check_rentry_long_straddle(existing_positions,name,client):
     data = pd.read_excel('login.xlsx')
     for index, row in data.iterrows():
             if row['name']==client:
-                if row['Long Straddle Status']==1:
-                    return False
+                status = eval(row['Long Straddle Status'])
+                if name in status.keys():
+                    if status[name]==1:
+                        return False
     if len(existing_positions)==0 :
         return True
     else:
@@ -121,7 +141,9 @@ def check_rentry_long_straddle(existing_positions,name,client):
                 p = False
                 for index, row in data.iterrows():
                     if row['name']==client:
-                        row['Long Straddle Status']==1
+                        status = eval(row['Long Straddle Status'])
+                        status[name] == 1
+                        row['Long Straddle Status']=status
                         pd.DataFrame.to_excel('login.xlsx')
         return p
 
