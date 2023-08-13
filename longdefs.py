@@ -5,6 +5,7 @@ import sqlite3
 import pytz
 import time
 from kiteconnect import KiteConnect
+import pandas as pd
   
 IST = pytz.timezone('Asia/Kolkata')
 
@@ -151,6 +152,11 @@ def cal_dates():
     return first_friday,last_friday,last_thursday_date_dt
 
 def check_rentry_long_straddle(existing_positions,name):
+    data = pd.read_excel('login.xlsx')
+    for index, row in data.iterrows():
+            if row['name']==name:
+                if row['Long Straddle Status']==1:
+                    return False
     if len(existing_positions)==0 :
         return True
     else:
@@ -158,7 +164,12 @@ def check_rentry_long_straddle(existing_positions,name):
         for i in existing_positions:
             if name in i['tradingsymbol']:
                 p = False
+                for index, row in data.iterrows():
+                    if row['name']==name:
+                        row['Long Straddle Status']==1
+                        pd.DataFrame.to_excel('login.xlsx')
         return p
+    
 
 def long_straddle(name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
