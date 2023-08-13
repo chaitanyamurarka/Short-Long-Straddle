@@ -18,7 +18,7 @@ def net_quant_zero(existing_positions,name):
         return p
 
 def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
-    print('Scanning Entry Short Straddle Option Chain for:',name,":",len(instruments))
+    print('Scanning Entry Short Straddle Option Chain for:',name)
     IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
@@ -96,13 +96,12 @@ def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     pe_ltp = None
     diff = None
     for j in instruments:
-        if j['name'] == name and j['tradingsymbol']!='HINDCOPPER23AUG173PE':
+        if j['name'] == name:
             if j['expiry'] == last_thursday_date_dt:
                 if j['instrument_type']=='PE':
                     ltp_data = kite.ltp('NFO:'+j['tradingsymbol'])
                     if ltp_data:
                         price = ltp_data['NFO:'+j['tradingsymbol']]['last_price']
-                        print(j['tradingsymbol'],j['last_price'],price)
                         if price != 0:
                             if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
                                 pe_ltp = price
@@ -196,6 +195,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 sell_pe = get_sell_pe_from_ce(existing_positions,name)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
+                print(f"Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")
                 if (
                     (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                 or (
@@ -271,7 +271,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                 buy_pe = get_sell_pe_from_ce(existing_positions,name)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                print(ltp_ce,ltp_pe)
+                print(f"Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} || Buy {buy_ce} & PE ltp {ltp_pe} || Buy {buy_pe}")
                 if (
                     (ltp_pe <= 0.65*buy_ce and ltp_ce <= 0.65*buy_pe)
                     or
