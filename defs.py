@@ -63,6 +63,7 @@ def net_quant_zero(kite,name):
             # print("The SQLite connection is closed")
 
 def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
+    print('Performing Short for:',name,":",len(instruments))
     IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
@@ -101,6 +102,7 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
+    print('Performing Long for:',name,":",len(instruments))
     IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
