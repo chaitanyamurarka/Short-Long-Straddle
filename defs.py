@@ -107,7 +107,7 @@ def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     print('Scanning Entry Long Straddle Option Chain for:',name)
     IST = pytz.timezone('Asia/Kolkata')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
-    strike = None  # Initialize ATM to None
+    atm = None  # Initialize ATM to None
     diff = None
     tradingsymbol_ce=None
     lot_size_ce=None
@@ -117,12 +117,26 @@ def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
         if i['instrument_type']=='CE':
             if i['name'] == name:
                 if i['expiry'] == last_thursday_date_dt:
-                    if strike is None or abs(float(i['strike']) - ltp) < diff:
-                        strike = i['strike']
-                        diff = abs(float(strike - ltp))
-                        tradingsymbol_ce = i['tradingsymbol']
-                        lot_size_ce = i['lot_size']
-                        instru_ce = i['instrument_token']
+                    if atm is None or abs(float(i['strike']) - ltp) < diff:
+                        atm = i['strike']
+                        diff = abs(float(atm - ltp))
+                        # tradingsymbol_ce = i['tradingsymbol']
+                        # lot_size_ce = i['lot_size']
+                        # instru_ce = i['instrument_token']
+    strike = None
+    diff = None
+    for i in instruments:
+        if i['instrument_type']=='CE':
+            if i['name'] == name:
+                if i['expiry'] == last_thursday_date_dt:
+                    if i['strike']<atm:
+                        if strike is None or abs(float(i['strike']) - atm) < diff:
+                            strike = i['strike']
+                            diff = abs(float(strike - atm))
+                            tradingsymbol_ce = i['tradingsymbol']
+                            lot_size_ce = i['lot_size']
+                            instru_ce = i['instrument_token']        
+    
     ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
     pe_ltp = None
     diff = None
@@ -387,9 +401,9 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                             INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
                             VALUES (?, ?, ?,?,?);
                         '''
-                        data_to_insert = (tradingsymbol_ce, lot_size_ce*-1*val,instru_ce,ltp_ce,datetime.now(IST))
+                        data_to_insert = (tradingsymbol_ce, lot_size_ce*1*val,instru_ce,ltp_ce,datetime.now(IST))
                         cursor.execute(insert_data_query, data_to_insert)
-                        data_to_insert = (tradingsymbol_pe, lot_size_pe*-1*val,instru_pe,ltp_pe,datetime.now(IST))
+                        data_to_insert = (tradingsymbol_pe, lot_size_pe*1*val,instru_pe,ltp_pe,datetime.now(IST))
                         cursor.execute(insert_data_query, data_to_insert)
 
                         sqliteConnection.commit()
@@ -430,22 +444,22 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                     for lol in rows:
                         if lol[0]==position[0]:
                             quan += lol[1]
-                    if quan < 0:
+                    if quan > 0:
                         instru_ce = position[2]
                         instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(rows,name)
                         for lol in rows:
                             if lol[0]==position[0]:
-                                sell_ce = lol[3]
-                        sell_pe = get_sell_pe_from_ce(rows,name)
+                                buy_ce = lol[3]
+                        buy_pe = get_sell_pe_from_ce(rows,name)
                         ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                         ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
                         print(ltp_ce,ltp_pe)
                         if (
-                            (ltp_pe <= 0.65*sell_pe and ltp_ce <= 0.65*sell_ce)
+                            (ltp_pe <= 0.65*buy_pe and ltp_ce <= 0.65*buy_ce)
                             or
-                            ltp_pe >= 3*sell_pe
+                            ltp_pe >= 3*buy_pe
                             or
-                            ltp_ce >= 3*sell_ce
+                            ltp_ce >= 3*buy_ce
                         ):
                             try:
                                 print(f'\nExiting Long STRADDLE FOR \n{position[0]} Of Quantity {position[1]} \nand\n{trad_pe} of Quantity {position[1]}')
