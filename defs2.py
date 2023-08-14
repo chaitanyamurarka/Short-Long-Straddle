@@ -251,7 +251,7 @@ def check_rentry_long_straddle(existing_positions,name,client):
                         status = eval(row['Long Straddle Status'])
                         status[name] = 1
                         data.loc[index, 'Long Straddle Status'] = str(status)
-                        data.DataFrame.to_excel('login.xlsx')
+                        data.to_excel('login.xlsx')
         return p
 
 def long_straddle(client,name,val,kite,instruments,existing_positions):

@@ -381,7 +381,7 @@ def check_rentry_long_straddle(rows,name,client):
                         status = eval(row['Long Straddle Status'])
                         status[name] = 1
                         data.loc[index, 'Long Straddle Status'] = str(status)
-                        data.DataFrame.to_excel('login.xlsx')
+                        data.to_excel('login.xlsx')
         return p
     
 
@@ -391,7 +391,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
     second_last_thursday = last_friday-8
     # Check if it's time to enter the trade
     if (
-        datetime.now(IST).time() >= datetime.strptime('15:25', '%H:%M').time()
+        datetime.now(IST).time() >= datetime.strptime('14:25', '%H:%M').time()
         and (
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) <= second_last_thursday)
         )
