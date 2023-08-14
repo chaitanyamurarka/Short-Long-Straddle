@@ -381,6 +381,9 @@ def check_rentry_long_straddle(rows,name,client):
                         status = eval(row['Long Straddle Status'])
                         status[name] = 1
                         data.loc[index, 'Long Straddle Status'] = str(status)
+                        # Removing unnamed columns
+                        unnamed_columns = [col for col in data.columns if 'Unnamed' in col]
+                        data = data.drop(columns=unnamed_columns)
                         data.to_excel('login.xlsx')
         return p
     
