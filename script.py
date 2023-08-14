@@ -10,7 +10,7 @@ from datetime import datetime
 from defs import net_quant_zero,short_get_symbol_lotsize,long_get_symbol_lotsize,place_order,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle,long_straddle,check_rentry_long_straddle
 
 
-login = pd.read_excel('login.xlsx')
+login = pd.read_csv('login.csv')
 IST = pytz.timezone('Asia/Kolkata')
 # Generate a unique log file name with a timestamp
 log_file = f"log_{datetime.now(IST).strftime('%Y%m%d_%H%M%S')}.log"

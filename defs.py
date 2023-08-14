@@ -362,7 +362,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 # print("The SQLite connection is closed")
                 
 def check_rentry_long_straddle(rows,name,client):
-    data = pd.read_excel('login.xlsx')
+    data = pd.read_csv('login.csv')
     for index, row in data.iterrows():
             if row['name']==client:
                 status = eval(row['Long Straddle Status'])
@@ -384,7 +384,7 @@ def check_rentry_long_straddle(rows,name,client):
                         # Removing unnamed columns
                         unnamed_columns = [col for col in data.columns if 'Unnamed' in col]
                         data = data.drop(columns=unnamed_columns)
-                        data.to_excel('login.xlsx')
+                        data.to_csv('login.csv')
         return p
     
 
