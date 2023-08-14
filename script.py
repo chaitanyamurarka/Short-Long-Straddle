@@ -132,10 +132,11 @@ def process_row(row):
     for key, val in short_stock_and_quan[row['name']].items():
         if check_open_order(kite,key):
             short_straddle(row['name'],key, val, kite, instruments, usr_posi)
+            time.sleep(1)
     for key, val in long_stock_and_quan[row['name']].items():
         if check_open_order(kite,key):
             long_straddle(row['name'],key, val, kite, instruments, usr_posi)
-            
+            time.sleep(1)
 
 # Use a ThreadPoolExecutor for managing concurrent processing
 with ThreadPoolExecutor(max_workers=4) as executor:

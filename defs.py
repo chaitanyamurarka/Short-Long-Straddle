@@ -85,13 +85,21 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
     pe_ltp = None
     diff = None
+    token_ltp = []
     for j in instruments:
         if j['name'] == name:
             if j['expiry'] == last_thursday_date_dt:
                 if j['instrument_type']=='PE':
-                    ltp_data = kite.ltp('NFO:'+j['tradingsymbol'])
+                    token_ltp.append('NFO:'+j['tradingsymbol'])
+    token_ltp = tuple(token_ltp)
+    ltp_prices = kite.ltp(token_ltp)
+    for j in instruments:
+        if j['name'] == name:
+            if j['expiry'] == last_thursday_date_dt:
+                if j['instrument_type']=='PE':
+                    ltp_data = ltp_prices['NFO:'+j['tradingsymbol']]
                     if ltp_data:
-                        price = ltp_data['NFO:'+j['tradingsymbol']]['last_price']
+                        price = ltp_data['last_price']
                         if price != 0:
                             if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
                                 pe_ltp = price
@@ -99,8 +107,7 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
                                 tradingsymbol_pe = j['tradingsymbol']
                                 lot_size_pe = j['lot_size']   
                                 instru_pe = j['instrument_token']
-                        time.sleep(0.3)
-                        logging.info(datetime.now(IST))
+                    logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
@@ -140,13 +147,21 @@ def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
     pe_ltp = None
     diff = None
+    token_ltp = []
     for j in instruments:
-        if j['name'] == name and j['tradingsymbol']!='HINDCOPPER23AUG173PE':
+        if j['name'] == name:
             if j['expiry'] == last_thursday_date_dt:
                 if j['instrument_type']=='PE':
-                    ltp_data = kite.ltp('NFO:'+j['tradingsymbol'])
+                    token_ltp.append('NFO:'+j['tradingsymbol'])
+    token_ltp = tuple(token_ltp)
+    ltp_prices = kite.ltp(token_ltp)
+    for j in instruments:
+        if j['name'] == name:
+            if j['expiry'] == last_thursday_date_dt:
+                if j['instrument_type']=='PE':
+                    ltp_data = ltp_prices['NFO:'+j['tradingsymbol']]
                     if ltp_data:
-                        price = ltp_data['NFO:'+j['tradingsymbol']]['last_price']
+                        price = ltp_data['last_price']
                         if price != 0:
                             if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
                                 pe_ltp = price
@@ -154,8 +169,7 @@ def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
                                 tradingsymbol_pe = j['tradingsymbol']
                                 lot_size_pe = j['lot_size']   
                                 instru_pe = j['instrument_token']
-                        time.sleep(0.3)
-                        logging.info(datetime.now(IST))
+                    logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product, orderType):
@@ -299,8 +313,8 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                         )
                         or
                         (
-                            # (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
-                            (ltp_ce <= sell_ce*0.95) or (ltp_pe <= sell_pe*0.95) or (ltp_ce >= sell_ce*1.05) or (ltp_pe >= sell_pe*1.05)
+                            (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
+                            # (ltp_ce <= sell_ce*0.95) or (ltp_pe <= sell_pe*0.95) or (ltp_ce >= sell_ce*1.05) or (ltp_pe >= sell_pe*1.05)
                         )):
                             try:
                                 print(f'\nExiting SHORT STRADDLE FOR \n{position[0]} Of Quantity {position[1]} \nand\n{trad_pe} of Quantity {position[1]}')
@@ -347,7 +361,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 sqliteConnection.close()
                 # print("The SQLite connection is closed")
                 
-def check_rentry_long_straddle(existing_positions,name,client):
+def check_rentry_long_straddle(rows,name,client):
     data = pd.read_excel('login.xlsx')
     for index, row in data.iterrows():
             if row['name']==client:
@@ -355,12 +369,12 @@ def check_rentry_long_straddle(existing_positions,name,client):
                 if name in status.keys():
                     if status[name]==1:
                         return False
-    if len(existing_positions)==0 :
+    if len(rows)==0 :
         return True
     else:
         p = True
-        for i in existing_positions:
-            if name in i['tradingsymbol']:
+        for i in rows:
+            if name in i[0]:
                 p = False
                 for index, row in data.iterrows():
                     if row['name']==client:
@@ -382,7 +396,32 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) <= second_last_thursday)
         )
         ):
-        if check_rentry_long_straddle(existing_positions,name,client):
+        try:
+            # Connect to the SQLite database or create it if not exists
+            sqliteConnection = sqlite3.connect('SQLite_Python.db')
+
+            # Create a cursor to interact with the database
+            cursor = sqliteConnection.cursor()
+            # print("Database created and Successfully Connected to SQLite")
+
+            # Fetch all rows from the 'portfolio' table
+            fetch_all_query = '''
+                SELECT * FROM portfolio;
+            '''
+            cursor.execute(fetch_all_query)
+            rows = cursor.fetchall()
+            if sqliteConnection:    
+                cursor.close()
+
+        except sqlite3.Error as error:
+            print("Error while working with SQLite:", error)
+        finally:
+            # Close the database connection if it's open
+            if sqliteConnection:
+                sqliteConnection.close()
+                # print("The SQLite connection is closed")
+                
+        if check_rentry_long_straddle(rows,name,client):
             if net_quant_zero(kite,name):
                 tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
                 if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
