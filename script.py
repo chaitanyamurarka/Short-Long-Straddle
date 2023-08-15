@@ -130,13 +130,21 @@ def process_row(row):
             usr_posi.append(i)
     instruments = usr_instrums[row['name']]
     for key, val in short_stock_and_quan[row['name']].items():
-        if check_open_order(kite,key):
-            short_straddle(row['name'],key, val, kite, instruments, usr_posi)
-            time.sleep(1)
+        try:
+            if check_open_order(kite,key):
+                short_straddle(row['name'],key, val, kite, instruments, usr_posi)
+                time.sleep(1)
+        except Exception as e:
+            logging.info(e)
+            pass
     for key, val in long_stock_and_quan[row['name']].items():
-        if check_open_order(kite,key):
-            long_straddle(row['name'],key, val, kite, instruments, usr_posi)
-            time.sleep(1)
+        try:
+            if check_open_order(kite,key):
+                long_straddle(row['name'],key, val, kite, instruments, usr_posi)
+                time.sleep(1)
+        except Exception as e:
+            logging.info(e)
+            pass
 
 # Use a ThreadPoolExecutor for managing concurrent processing
 with ThreadPoolExecutor(max_workers=4) as executor:
@@ -147,8 +155,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
             # Wait for all tasks to complete
             for future in futures:
                 future.result()
-
-            time.sleep(5)  # Adjust the delay as needed
+            time.sleep(0.3)  # Adjust the delay as needed
             logging.info(datetime.now(IST))
         else:
             print('Session Ended. Please Restart')
