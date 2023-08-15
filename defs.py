@@ -304,7 +304,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                         sell_pe = get_sell_pe_from_ce(rows,name)
                         ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                         ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                        print(f"Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")
+                        print(f"\nFor {client} Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")
                         if (
                             (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                         or (
@@ -334,7 +334,8 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                                 sqliteConnection.commit()
                                 # print("Row of data inserted into 'portfolio' table")
                                 # Close the cursor
-                                cursor.close()
+                                if sqliteConnection:
+                                    cursor.close()
                             except sqlite3.Error as error:
                                 print("Error while working with SQLite:", error)
                             finally:
@@ -450,7 +451,8 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                         sqliteConnection.commit()
                         # print("Row of data inserted into 'portfolio' table")
                         # Close the cursor
-                        cursor.close()
+                        if sqliteConnection:
+                            cursor.close()
                     except sqlite3.Error as error:
                         print("Error while working with SQLite:", error)
                     finally:
@@ -497,7 +499,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                         buy_pe = get_sell_pe_from_ce(rows,name)
                         ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                         ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                        print(f"Checking Long Exit Condtion for {name} with current CE ltp {ltp_ce} || Buy {buy_ce} & PE ltp {ltp_pe} || Buy {buy_pe}")
+                        print(f"\nFor {client} Checking Long Exit Condtion for {name} with current CE ltp {ltp_ce} || Buy {buy_ce} & PE ltp {ltp_pe} || Buy {buy_pe}")
                         if (
                             (ltp_pe <= 0.65*buy_pe and ltp_ce <= 0.65*buy_ce)
                             or
@@ -523,7 +525,8 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                                 sqliteConnection.commit()
                                 # print("Row of data inserted into 'portfolio' table")
                                 # Close the cursor
-                                cursor.close()
+                                if sqliteConnection:
+                                    cursor.close()
                             except sqlite3.Error as error:
                                 print("Error while working with SQLite:", error)
                             finally:
