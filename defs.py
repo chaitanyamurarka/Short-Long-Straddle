@@ -105,9 +105,9 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
 def long_get_symbol_lotsize(rows,instruments,name,last_thursday_date_dt,kite):
             
     for row in rows:
-        if name in str(row[0]) and 'CE' in str(row[0])[-2:]:
+        if name in str(row[0]) and 'CE' in str(row[0])[-2:] and row[1]<0:
             ce_rover = row
-        if name in str(row[0]) and 'PE' in str(row[0])[-2:]:
+        if name in str(row[0]) and 'PE' in str(row[0])[-2:] and row[1]<0:
             pe_rover = row
     
     ce_row = ce_rover
@@ -404,7 +404,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
 
     # Check if it's time to exit the trade
     if ((datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time()) 
-        and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
+        # and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
         ):
         # Fetching all entries from table
         try:
