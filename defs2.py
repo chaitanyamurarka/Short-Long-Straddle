@@ -65,66 +65,53 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
                     logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
-def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
-    print('\nScanning Entry Long Straddle Option Chain for:',name)
-    IST = pytz.timezone('Asia/Kolkata')
-    ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
-    atm = None  # Initialize ATM to None
-    diff = None
-    tradingsymbol_ce=None
-    lot_size_ce=None
-    tradingsymbol_pe=None
-    lot_size_pe = None
+def long_get_symbol_lotsize(existing_positions,instruments,name,last_thursday_date_dt,kite):
+            
+    for position in existing_positions:
+        if name in str(position['tradingsymbol']) and 'CE' in str(position['tradingsymbol'])[-2:] and position['quantity']<0:
+            ce_rover = position
+        if name in str(position['tradingsymbol']) and 'PE' in str(position['tradingsymbol'])[-2:] and position['quantity']<0:
+            pe_rover = position
+    
+    ce_row = ce_rover
+    short_instru_ce,short_tradsym_ce =  ce_row['instrument_token'],ce_row['tradingsymbol']  
+    pe_row = pe_rover
+    short_instru_pe,short_tradsym_pe =  pe_row['instrument_token'],pe_row['tradingsymbol']
+    
+    for i in instruments:
+        if i['tradingsymbol'] == short_tradsym_ce:
+            ce_strike = i['strike']
+        if i['tradingsymbol'] == short_tradsym_pe:
+            pe_strike = i['strike']
+            
+    long_ce_strike = None
+    long_pe_strike = None
+
+    diff = None        
     for i in instruments:
         if i['instrument_type']=='CE':
             if i['name'] == name:
                 if i['expiry'] == last_thursday_date_dt:
-                    if atm is None or abs(float(i['strike']) - ltp) < diff:
-                        atm = i['strike']
-                        diff = abs(float(atm - ltp))
-                        # tradingsymbol_ce = i['tradingsymbol']
-                        # lot_size_ce = i['lot_size']
-                        # instru_ce = i['instrument_token']
-    strike = None
-    diff = None
-    for i in instruments:
-        if i['instrument_type']=='CE':
-            if i['name'] == name:
-                if i['expiry'] == last_thursday_date_dt:
-                    if i['strike']<atm:
-                        if strike is None or abs(float(i['strike']) - atm) < diff:
-                            strike = i['strike']
-                            diff = abs(float(strike - atm))
+                    if i['strike']<ce_strike:
+                        if long_ce_strike is None or abs(float(i['strike']) - ce_strike) < diff:
+                            long_ce_strike = i['strike']
+                            diff = abs(float(long_ce_strike - ce_strike))
                             tradingsymbol_ce = i['tradingsymbol']
                             lot_size_ce = i['lot_size']
-                            instru_ce = i['instrument_token']        
+                            instru_ce = i['instrument_token']    
+    diff = None  
+    for i in instruments:
+        if i['instrument_type']=='PE':
+            if i['name'] == name:
+                if i['expiry'] == last_thursday_date_dt:
+                    if i['strike']>pe_strike:
+                        if long_pe_strike is None or abs(float(i['strike']) - pe_strike) < diff:
+                            long_pe_strike = i['strike']
+                            diff = abs(float(long_pe_strike - pe_strike))
+                            tradingsymbol_pe = i['tradingsymbol']
+                            lot_size_pe = i['lot_size']
+                            instru_pe = i['instrument_token']  
     
-    ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
-    pe_ltp = None
-    diff = None
-    token_ltp = []
-    for j in instruments:
-        if j['name'] == name:
-            if j['expiry'] == last_thursday_date_dt:
-                if j['instrument_type']=='PE':
-                    token_ltp.append('NFO:'+j['tradingsymbol'])
-    token_ltp = tuple(token_ltp)
-    ltp_prices = kite.ltp(token_ltp)
-    for j in instruments:
-        if j['name'] == name:
-            if j['expiry'] == last_thursday_date_dt:
-                if j['instrument_type']=='PE':
-                    ltp_data = ltp_prices['NFO:'+j['tradingsymbol']]
-                    if ltp_data:
-                        price = ltp_data['last_price']
-                        if price != 0:
-                            if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
-                                pe_ltp = price
-                                diff = abs(float(price - ce_ltp))
-                                tradingsymbol_pe = j['tradingsymbol']
-                                lot_size_pe = j['lot_size']   
-                                instru_pe = j['instrument_token']
-                    logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product, orderType):
@@ -144,22 +131,25 @@ def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product
     except Exception as e:
         logging.info('Order placement failed: %s', e.message)
 
-
-
 def get_name_from_instrument_token(instruments,instrument_token):
     for instrument in instruments:
         if int(instrument['instrument_token']) == int(instrument_token):
             return instrument['name']
     return None
 
-def get_instru_tradesymbol_pe_from_ce(existing_positions,name):
+def short_get_instru_tradesymbol_pe_from_ce(existing_positions,name):
     for position in existing_positions:
-        if name in position['name'] and 'PE' in position['name'] and position['quantity']!=0:
+        if name in position['tradingsymbol'] and 'PE' in position['tradingsymbol'][-2:] and position['quantity'] < 0:
+            return position['instrument_token'],position['tradingsymbol']
+        
+def long_get_instru_tradesymbol_pe_from_ce(existing_positions,name):
+    for position in existing_positions:
+        if name in position['tradingsymbol'] and 'PE' in position['tradingsymbol'][-2:] and position['quantity'] > 0:
             return position['instrument_token'],position['tradingsymbol']
         
 def get_sell_pe_from_ce(existing_positions,name):
     for position in existing_positions:
-        if (name in position['name']  and 'PE' in position['name'] and position['quantity']!=0):
+        if (name in position['tradingsymbol']  and 'PE' in position['tradingsymbol'][-2:] and position['quantity']!=0):
             return position['sell_price']
   
 def cal_dates():
@@ -183,7 +173,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade
     if (
-        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time()
+        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time() and datetime.now(IST).time() < datetime.strptime('15:25', '%H:%M').time()
         and (
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) < last_friday)
         or 
@@ -204,7 +194,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
         for position in existing_positions:
             if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] < 0 and 'CE' in position['tradingsymbol'][-2:]:  # Assuming short positions
                 instru_ce = position['instrument_token']
-                instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(existing_positions,name)
+                instru_pe,trad_pe = short_get_instru_tradesymbol_pe_from_ce(existing_positions,name)
                 sell_ce = position['sell_price']
                 sell_pe = get_sell_pe_from_ce(existing_positions,name)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
@@ -216,7 +206,6 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                     int(datetime.now(IST).today().strftime('%d')) == last_friday
                     and datetime.now(IST).time() >= datetime.strptime('14:00', '%H:%M').time()
                 )
-                
                 or
                 (
                     (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
@@ -231,31 +220,6 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
                 break
 
-def check_rentry_long_straddle(existing_positions,name,client):
-    data = pd.read_csv('login.csv')
-    for index, row in data.iterrows():
-            if row['name']==client:
-                status = eval(row['Long Straddle Status'])
-                if name in status.keys():
-                    if status[name]==1:
-                        return False
-    if len(existing_positions)==0 :
-        return True
-    else:
-        p = True
-        for i in existing_positions:
-            if name in i['tradingsymbol']:
-                p = False
-                for index, row in data.iterrows():
-                    if row['name']==client:
-                        status = eval(row['Long Straddle Status'])
-                        status[name] = 1
-                        data.loc[index, 'Long Straddle Status'] = str(status)
-                        # Removing unnamed columns
-                        unnamed_columns = [col for col in data.columns if 'Unnamed' in col]
-                        data = data.drop(columns=unnamed_columns)
-                        data.to_csv('login.csv')
-        return p
 
 def long_straddle(client,name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
@@ -268,43 +232,30 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) <= second_last_thursday)
         )
         ):
-        if check_rentry_long_straddle(existing_positions,name,client):
-            if net_quant_zero(existing_positions,name):
-                tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
-                if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                    print(f'\nENTERING Long STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
-                    # place_order(kite,tradingsymbol_ce, 0, lot_size_ce*val, kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                    # KiteConnect.ORDER_TYPE_MARKET)
-                    # place_order(kite,tradingsymbol_pe, 0, lot_size_pe*val, kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                    #             KiteConnect.ORDER_TYPE_MARKET)
+        if not net_quant_zero(existing_positions,name):
+            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(existing_positions,instruments,name,last_thursday_date_dt,kite)
+            if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
+                print(f'\nENTERING Long STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
+                # place_order(kite,tradingsymbol_ce, 0, lot_size_ce*val, kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                # KiteConnect.ORDER_TYPE_MARKET)
+                # place_order(kite,tradingsymbol_pe, 0, lot_size_pe*val, kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                #             KiteConnect.ORDER_TYPE_MARKET)
 
     # Check if it's time to exit the trade
     if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
         for position in existing_positions:
-            if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] > 0 and 'CE' in position['tradingsymbol'][-2:]:  # Assuming short positions
+            if (get_name_from_instrument_token(instruments,position['instrument_token']) == name 
+                and position['quantity'] > 0 
+                and 'CE' in position['tradingsymbol'][-2:]):  # Assuming short positions
                 instru_ce = position['instrument_token']
-                instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(existing_positions,name)
-                buy_ce = position['sell_price']
-                buy_pe = get_sell_pe_from_ce(existing_positions,name)
+                instru_pe,trad_pe = long_get_instru_tradesymbol_pe_from_ce(existing_positions,name)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                print(f"\nFor {client} Checking Long Exit Condtion for {name} with current CE ltp {ltp_ce} || Buy {buy_ce} & PE ltp {ltp_pe} || Buy {buy_pe}")
-                if (
-                    # (ltp_pe <= 0.65*buy_ce and ltp_ce <= 0.65*buy_pe)
-                    # or
-                    # ltp_pe >= 3*buy_ce
-                    # or
-                    # ltp_ce >= 3*buy_pe
-                    # or
-                    (ltp_pe + ltp_ce ) / (buy_pe + buy_ce ) <= 0.5
-                    or
-                    (ltp_pe + ltp_ce ) / (buy_pe + buy_ce ) >= 1.4
-                ):
-                    print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                    # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                    #             KiteConnect.ORDER_TYPE_MARKET)
-                    # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                    #             KiteConnect.ORDER_TYPE_MARKET)
-                else:
-                    print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
+                print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
+                # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                #             KiteConnect.ORDER_TYPE_MARKET)
+                # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                #             KiteConnect.ORDER_TYPE_MARKET)
+            else:
+                print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
             break
