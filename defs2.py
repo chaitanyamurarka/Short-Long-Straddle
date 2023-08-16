@@ -154,12 +154,12 @@ def get_name_from_instrument_token(instruments,instrument_token):
 
 def get_instru_tradesymbol_pe_from_ce(existing_positions,name):
     for position in existing_positions:
-        if name in position['name'] and 'PE' in position['name']:
+        if name in position['name'] and 'PE' in position['name'] and position['quantity']!=0:
             return position['instrument_token'],position['tradingsymbol']
         
 def get_sell_pe_from_ce(existing_positions,name):
     for position in existing_positions:
-        if (name in position['name']  and 'PE' in position['name']):
+        if (name in position['name']  and 'PE' in position['name'] and position['quantity']!=0):
             return position['sell_price']
   
 def cal_dates():
@@ -202,7 +202,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
     # Check if it's time to exit the trade
     if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
         for position in existing_positions:
-            if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] < 0 and 'CE' in position['tradingsymbol']:  # Assuming short positions
+            if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] < 0 and 'CE' in position['tradingsymbol'][-2:]:  # Assuming short positions
                 instru_ce = position['instrument_token']
                 instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(existing_positions,name)
                 sell_ce = position['sell_price']
@@ -281,7 +281,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
     # Check if it's time to exit the trade
     if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
         for position in existing_positions:
-            if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] > 0 and 'CE' in position['tradingsymbol']:  # Assuming short positions
+            if get_name_from_instrument_token(instruments,position['instrument_token']) == name and position['quantity'] > 0 and 'CE' in position['tradingsymbol'][-2:]:  # Assuming short positions
                 instru_ce = position['instrument_token']
                 instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(existing_positions,name)
                 buy_ce = position['sell_price']
@@ -290,11 +290,15 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
                 print(f"\nFor {client} Checking Long Exit Condtion for {name} with current CE ltp {ltp_ce} || Buy {buy_ce} & PE ltp {ltp_pe} || Buy {buy_pe}")
                 if (
-                    (ltp_pe <= 0.65*buy_ce and ltp_ce <= 0.65*buy_pe)
+                    # (ltp_pe <= 0.65*buy_ce and ltp_ce <= 0.65*buy_pe)
+                    # or
+                    # ltp_pe >= 3*buy_ce
+                    # or
+                    # ltp_ce >= 3*buy_pe
+                    # or
+                    (ltp_pe + ltp_ce ) / (buy_pe + buy_ce ) <= 0.5
                     or
-                    ltp_pe >= 3*buy_ce
-                    or
-                    ltp_ce >= 3*buy_pe
+                    (ltp_pe + ltp_ce ) / (buy_pe + buy_ce ) >= 1.4
                 ):
                     print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
                     # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
