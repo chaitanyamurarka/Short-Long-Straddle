@@ -8,16 +8,8 @@ from kiteconnect import KiteConnect
 import pandas as pd
   
 IST = pytz.timezone('Asia/Kolkata')
-
+          
 def net_quant_zero(kite,name):
-    # if len(kite.positions()['net'])==0 :
-    #     return True
-    # else:
-    #     for i in kite.positions()['net']:
-    #             if name in i['tradingsymbol'] and i['quantity']==0:
-    #                 return True
-    # Fetching all entries from table
-
     try:
         # Connect to the SQLite database or create it if not exists
         sqliteConnection = sqlite3.connect('SQLite_Python.db')
@@ -110,66 +102,53 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
                     logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
-def long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
-    print('\nScanning Entry Long Straddle Option Chain for:',name)
-    IST = pytz.timezone('Asia/Kolkata')
-    ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
-    atm = None  # Initialize ATM to None
-    diff = None
-    tradingsymbol_ce=None
-    lot_size_ce=None
-    tradingsymbol_pe=None
-    lot_size_pe = None
+def long_get_symbol_lotsize(rows,instruments,name,last_thursday_date_dt,kite):
+            
+    for row in rows:
+        if name in str(row[0]) and 'CE' in str(row[0])[-2:]:
+            ce_rover = row
+        if name in str(row[0]) and 'PE' in str(row[0])[-2:]:
+            pe_rover = row
+    
+    ce_row = ce_rover
+    short_instru_ce,short_tradsym_ce =  ce_row[2],ce_row[0]  
+    pe_row = pe_rover
+    short_instru_pe,short_tradsym_pe =  pe_row[2],pe_row[0]
+    
+    for i in instruments:
+        if i['tradingsymbol'] == short_tradsym_ce:
+            ce_strike = i['strike']
+        if i['tradingsymbol'] == short_tradsym_pe:
+            pe_strike = i['strike']
+            
+    long_ce_strike = None
+    long_pe_strike = None
+
+    diff = None        
     for i in instruments:
         if i['instrument_type']=='CE':
             if i['name'] == name:
                 if i['expiry'] == last_thursday_date_dt:
-                    if atm is None or abs(float(i['strike']) - ltp) < diff:
-                        atm = i['strike']
-                        diff = abs(float(atm - ltp))
-                        # tradingsymbol_ce = i['tradingsymbol']
-                        # lot_size_ce = i['lot_size']
-                        # instru_ce = i['instrument_token']
-    strike = None
-    diff = None
-    for i in instruments:
-        if i['instrument_type']=='CE':
-            if i['name'] == name:
-                if i['expiry'] == last_thursday_date_dt:
-                    if i['strike']<atm:
-                        if strike is None or abs(float(i['strike']) - atm) < diff:
-                            strike = i['strike']
-                            diff = abs(float(strike - atm))
+                    if i['strike']<ce_strike:
+                        if long_ce_strike is None or abs(float(i['strike']) - ce_strike) < diff:
+                            long_ce_strike = i['strike']
+                            diff = abs(float(long_ce_strike - ce_strike))
                             tradingsymbol_ce = i['tradingsymbol']
                             lot_size_ce = i['lot_size']
-                            instru_ce = i['instrument_token']        
+                            instru_ce = i['instrument_token']    
+    diff = None  
+    for i in instruments:
+        if i['instrument_type']=='PE':
+            if i['name'] == name:
+                if i['expiry'] == last_thursday_date_dt:
+                    if i['strike']>pe_strike:
+                        if long_pe_strike is None or abs(float(i['strike']) - pe_strike) < diff:
+                            long_pe_strike = i['strike']
+                            diff = abs(float(long_pe_strike - pe_strike))
+                            tradingsymbol_pe = i['tradingsymbol']
+                            lot_size_pe = i['lot_size']
+                            instru_pe = i['instrument_token']  
     
-    ce_ltp = kite.ltp(f'NFO:{tradingsymbol_ce}')[f'NFO:{tradingsymbol_ce}']['last_price']
-    pe_ltp = None
-    diff = None
-    token_ltp = []
-    for j in instruments:
-        if j['name'] == name:
-            if j['expiry'] == last_thursday_date_dt:
-                if j['instrument_type']=='PE':
-                    token_ltp.append('NFO:'+j['tradingsymbol'])
-    token_ltp = tuple(token_ltp)
-    ltp_prices = kite.ltp(token_ltp)
-    for j in instruments:
-        if j['name'] == name:
-            if j['expiry'] == last_thursday_date_dt:
-                if j['instrument_type']=='PE':
-                    ltp_data = ltp_prices['NFO:'+j['tradingsymbol']]
-                    if ltp_data:
-                        price = ltp_data['last_price']
-                        if price != 0:
-                            if pe_ltp is None or abs(float(price) - ce_ltp) < diff:
-                                pe_ltp = price
-                                diff = abs(float(price - ce_ltp))
-                                tradingsymbol_pe = j['tradingsymbol']
-                                lot_size_pe = j['lot_size']   
-                                instru_pe = j['instrument_token']
-                    logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product, orderType):
@@ -188,7 +167,6 @@ def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product
         return orderId
     except Exception as e:
         logging.info('Order placement failed: %s', e.message)
-
 
 def get_name_from_instrument_token(instruments,instrument_token):
     for instrument in instruments:
@@ -232,7 +210,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade
     if (
-        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time()
+        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time() and datetime.now(IST).time() < datetime.strptime('15:25', '%H:%M').time()
         and (
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) < last_friday)
         or 
@@ -271,9 +249,6 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                     # Close the database connection if it's open
                     if sqliteConnection:
                         sqliteConnection.close()
-                        # print("The SQLite connection is closed")        
-        # else:
-        #     print(f"\n{name} Net Quantity Not Zero")
 
     # Check if it's time to exit the trade
     if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
@@ -306,8 +281,6 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                                 p = position
                 position = p
                 instru_ce = position[2]
-                # cursor.execute(fetch_all_query)
-                # rows = cursor.fetchall()
                 instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(rows,name)
                 for lol in rows:
                     if lol[0]==position[0]:
@@ -325,7 +298,6 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 or
                 (
                     (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
-                    # (ltp_ce <= sell_ce*0.95) or (ltp_pe <= sell_pe*0.95) or (ltp_ce >= sell_ce*1.05) or (ltp_pe >= sell_pe*1.05)
                 )):
                     try:
                         print(f'\nExiting SHORT STRADDLE FOR \n{position[0]} Of Quantity {position[1]} \nand\n{trad_pe} of Quantity {position[1]}')
@@ -346,18 +318,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                         #     cursor.close()
                     except sqlite3.Error as error:
                         print("Error while working with SQLite:", error)
-                            # finally:
-                                # Close the database connection if it's open
-                                # if sqliteConnection:
-                                #     sqliteConnection.close()
-                            # print("The SQLite connection is closed")                         
-                            # print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                            # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                            #             KiteConnect.ORDER_TYPE_MARKET)
-                            # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
-                            #             KiteConnect.ORDER_TYPE_MARKET)
-                        # else:
-                        #     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
+
                     
             if sqliteConnection:    
                 cursor.close()
@@ -369,34 +330,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
             if sqliteConnection:
                 sqliteConnection.close()
                 # print("The SQLite connection is closed")
-                
-def check_rentry_long_straddle(rows,name,client):
-    data = pd.read_csv('login.csv')
-    for index, row in data.iterrows():
-            if row['name']==client:
-                status = eval(row['Long Straddle Status'])
-                if name in status.keys():
-                    if status[name]==1:
-                        return False
-    if len(rows)==0 :
-        return True
-    else:
-        p = True
-        for i in rows:
-            if name in i[0]:
-                p = False
-                for index, row in data.iterrows():
-                    if row['name']==client:
-                        status = eval(row['Long Straddle Status'])
-                        status[name] = 1
-                        data.loc[index, 'Long Straddle Status'] = str(status)
-                        # Removing unnamed columns
-                        unnamed_columns = [col for col in data.columns if 'Unnamed' in col]
-                        data = data.drop(columns=unnamed_columns)
-                        data.to_csv('login.csv')
-        return p
-    
-
+                    
 def long_straddle(client,name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
@@ -433,46 +367,45 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                 sqliteConnection.close()
                 # print("The SQLite connection is closed")
                 
-        if check_rentry_long_straddle(rows,name,client):
-            if net_quant_zero(kite,name):
-                tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
-                if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                    print(f'\nENTERING Long STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
+        if not net_quant_zero(kite,name):
+            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(rows,instruments,name,last_thursday_date_dt,kite)
+            if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
+                print(f'\nENTERING Long STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
 
-                    ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
-                    ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
+                ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
+                ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
 
-                    try:
-                        sqliteConnection = sqlite3.connect('SQLite_Python.db')
-                        cursor = sqliteConnection.cursor()
-                        # print("Database created and Successfully Connected to SQLite")
-                        
-                        insert_data_query = '''
-                            INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
-                            VALUES (?, ?, ?,?,?);
-                        '''
-                        data_to_insert = (tradingsymbol_ce, lot_size_ce*1*val,instru_ce,ltp_ce,datetime.now(IST))
-                        cursor.execute(insert_data_query, data_to_insert)
-                        data_to_insert = (tradingsymbol_pe, lot_size_pe*1*val,instru_pe,ltp_pe,datetime.now(IST))
-                        cursor.execute(insert_data_query, data_to_insert)
+                try:
+                    sqliteConnection = sqlite3.connect('SQLite_Python.db')
+                    cursor = sqliteConnection.cursor()
+                    # print("Database created and Successfully Connected to SQLite")
+                    
+                    insert_data_query = '''
+                        INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
+                        VALUES (?, ?, ?,?,?);
+                    '''
+                    data_to_insert = (tradingsymbol_ce, lot_size_ce*1*val,instru_ce,ltp_ce,datetime.now(IST))
+                    cursor.execute(insert_data_query, data_to_insert)
+                    data_to_insert = (tradingsymbol_pe, lot_size_pe*1*val,instru_pe,ltp_pe,datetime.now(IST))
+                    cursor.execute(insert_data_query, data_to_insert)
 
-                        sqliteConnection.commit()
-                        # print("Row of data inserted into 'portfolio' table")
-                        # Close the cursor
-                        if sqliteConnection:
-                            cursor.close()
-                    except sqlite3.Error as error:
-                        print("Error while working with SQLite:", error)
-                    finally:
-                        # Close the database connection if it's open
-                        if sqliteConnection:
-                            sqliteConnection.close()
-                            # print("The SQLite connection is closed")        
-        # else:
-        #     print(f"\n{name} Net Quantity Not Zero")
+                    sqliteConnection.commit()
+                    # print("Row of data inserted into 'portfolio' table")
+                    # Close the cursor
+                    if sqliteConnection:
+                        cursor.close()
+                except sqlite3.Error as error:
+                    print("Error while working with SQLite:", error)
+                finally:
+                    # Close the database connection if it's open
+                    if sqliteConnection:
+                        sqliteConnection.close()
+
 
     # Check if it's time to exit the trade
-    if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
+    if ((datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time()) 
+        and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
+        ):
         # Fetching all entries from table
         try:
             # Connect to the SQLite database or create it if not exists
@@ -489,58 +422,44 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
             cursor.execute(fetch_all_query)
             rows = cursor.fetchall()
             
-            quan = 0
-        
-            for position in rows:
-                if (get_name_from_instrument_token(instruments,position[2]) == name):  # Assuming short positions
-                    quan += position[1]
-            if quan > 0:
-                for position in rows:
-                    if (get_name_from_instrument_token(instruments,position[2]) == name):  # Assuming short positions
-                        if position[1] > 0:
-                            if 'CE' in position[0][-2:]:
-                                p = position
-            
-            position = p
-        
-            if quan > 0:
-                instru_ce = position[2]
-                instru_pe,trad_pe = get_instru_tradesymbol_pe_from_ce(rows,name)
-                for lol in rows:
-                    if lol[0]==position[0]:
-                        buy_ce = lol[3]
-                buy_pe = get_sell_pe_from_ce(rows,name)
-                ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
-                ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                print(f"\nFor {client} Checking Long Exit Condtion for {name} with current CE ltp {ltp_ce} || Buy {buy_ce} & PE ltp {ltp_pe} || Buy {buy_pe}")
-                if (
-                    # (ltp_pe <= 0.65*buy_pe and ltp_ce <= 0.65*buy_ce)
-                    # or
-                    # ltp_pe >= 3*buy_pe
-                    # or
-                    # ltp_ce >= 3*buy_ce
-                    # or
-                    (ltp_pe + ltp_ce ) / (buy_pe + buy_ce ) <= 0.5
-                    or
-                    (ltp_pe + ltp_ce ) / (buy_pe + buy_ce ) >= 1.4
-                ):
-                    try:
-                        print(f'\nExiting Long STRADDLE FOR \n{position[0]} Of Quantity {position[1]} \nand\n{trad_pe} of Quantity {position[1]}')
+            if net_quant_zero(kite,name):          
+                for row in rows:
+                    if name in str(row[0]) and 'CE' in str(row[0])[-2:] and row[1]>0:
+                        ce_rover = row
+                    if name in str(row[0]) and 'PE' in str(row[0])[-2:] and row[1]>0:
+                        pe_rover = row
+                
+                ce_row = ce_rover
+                long_instru_ce,long_tradsym_ce,long_quan_ce,long_buy_ce =  ce_row[2],ce_row[0] ,ce_row[1],ce_row[3]
+                pe_row = pe_rover
+                long_instru_pe,long_tradsym_pe,long_quan_pe,long_buy_pe =  pe_row[2],pe_row[0],pe_row[1],pe_row[3]
 
-                        insert_data_query = '''
-                            INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
-                            VALUES (?, ?, ?,?,?);
-                        '''
-                        data_to_insert = (position[0], position[1]*-1,instru_ce,ltp_ce,datetime.now(IST))
-                        cursor.execute(insert_data_query, data_to_insert)
-                        data_to_insert = (trad_pe, position[1]*-1,instru_pe,ltp_pe,datetime.now(IST))
-                        cursor.execute(insert_data_query, data_to_insert)
+                ltp_ce = ((kite.quote(int(long_instru_ce)))[str(long_instru_ce)])['last_price']
+                ltp_pe = ((kite.quote(int(long_instru_pe)))[str(long_instru_pe)])['last_price']
+                try:
+                    sqliteConnection = sqlite3.connect('SQLite_Python.db')
+                    cursor = sqliteConnection.cursor()
+                    # print("Database created and Successfully Connected to SQLite")
+                    
+                    
+                    print(f'\nExiting Long STRADDLE FOR \n{long_tradsym_ce} Of Quantity {long_quan_ce} \nand\n{long_tradsym_pe} of Quantity {long_quan_pe}')
 
-                        sqliteConnection.commit()
+                    insert_data_query = '''
+                        INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
+                        VALUES (?, ?, ?,?,?);
+                    '''
+                    data_to_insert = (long_tradsym_ce, long_quan_ce*-1,long_instru_ce,ltp_ce,datetime.now(IST))
+                    cursor.execute(insert_data_query, data_to_insert)
+                    data_to_insert = (long_tradsym_pe, long_quan_pe*-1,long_instru_pe,ltp_pe,datetime.now(IST))
+                    cursor.execute(insert_data_query, data_to_insert)
 
-                    except sqlite3.Error as error:
-                        print("Error while working with SQLite:", error)
-             
+                    sqliteConnection.commit()
+                                        
+                    if sqliteConnection:    
+                        cursor.close()
+
+                except sqlite3.Error as error:
+                    print("Error while working with SQLite:", error)
                     
             if sqliteConnection:    
                 cursor.close()

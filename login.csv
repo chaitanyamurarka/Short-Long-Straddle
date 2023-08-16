@@ -1,2 +1,2 @@
-,name,apikey,apisecret,short straddle,long straddle,Long Straddle Status
-0,ChaitanyaMurarka,32x4jxl51pyspsfn,bqk4276qgftuplngvtik62fd6ecks9od,"{'RELIANCE':5,'HDFCBANK':2,'INFY':3,'SBIN':8,'BHARTIARTL':1}","{'HINDCOPPER':2,'ZEEL':4,'RECLTD':3,'RBLBANK':2,'INDIACEM':2}","{'HINDCOPPER': 1, 'ZEEL': 1, 'RECLTD': 1, 'RBLBANK': 1, 'INDIACEM': 1}"
+,name,apikey,apisecret,short long straddle
+0,ChaitanyaMurarka,32x4jxl51pyspsfn,bqk4276qgftuplngvtik62fd6ecks9od,"{'RELIANCE':5,'HDFCBANK':2,'INFY':3,'SBIN':8,'BHARTIARTL':1}"

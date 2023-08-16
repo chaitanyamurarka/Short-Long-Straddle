@@ -7,7 +7,7 @@ import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 from kiteconnect import KiteConnect
 from datetime import datetime
-from defs import net_quant_zero,short_get_symbol_lotsize,long_get_symbol_lotsize,place_order,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle,long_straddle,check_rentry_long_straddle
+from defs import net_quant_zero,short_get_symbol_lotsize,long_get_symbol_lotsize,place_order,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle,long_straddle
 
 
 login = pd.read_csv('login.csv')
@@ -85,16 +85,16 @@ def cal_last_thru():
 
 print('Starting Short Straddle Bot')
 session = {}
-short_stock_and_quan = {}
-long_stock_and_quan = {}
+short_long_stock_and_quan = {}
+# long_stock_and_quan = {}
 usr_instrums = {}
 
 
 for index, row in login.iterrows():
     api_key = row['apikey']
     api_secret = row['apisecret']
-    short_stock_and_quan[row['name']] = eval(row['short straddle'])
-    long_stock_and_quan[row['name']] = eval(row['long straddle'])
+    short_long_stock_and_quan[row['name']] = eval(row['short long straddle'])
+    # long_stock_and_quan[row['name']] = eval(row['long straddle'])
     kite = KiteConnect(api_key=api_key)
     print('Please Login and Access your Request Token for',row['name'],kite.login_url())
     request_token = input('Please Enter the Request Token :')
@@ -102,7 +102,7 @@ for index, row in login.iterrows():
     session[row['name']]=kite
     short_instrums = []
     for i in kite.instruments():
-        if (i['name'] in eval(row['short straddle']).keys() or i['name'] in eval(row['long straddle']).keys()):
+        if (i['name'] in eval(row['short long straddle']).keys()):
             if i['expiry'] == cal_last_thru():
                 short_instrums.append(i)
     usr_instrums[row['name']] = short_instrums
@@ -129,19 +129,12 @@ def process_row(row):
         if i['exchange']=='NFO':
             usr_posi.append(i)
     instruments = usr_instrums[row['name']]
-    for key, val in short_stock_and_quan[row['name']].items():
+    for key, val in short_long_stock_and_quan[row['name']].items():
         try:
             if check_open_order(kite,key):
                 short_straddle(row['name'],key, val, kite, instruments, usr_posi)
-                time.sleep(1)
-        except Exception as e:
-            logging.info(e)
-            pass
-    for key, val in long_stock_and_quan[row['name']].items():
-        try:
-            if check_open_order(kite,key):
+                time.sleep(0.3)
                 long_straddle(row['name'],key, val, kite, instruments, usr_posi)
-                time.sleep(1)
         except Exception as e:
             logging.info(e)
             pass
