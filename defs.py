@@ -404,7 +404,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
 
     # Check if it's time to exit the trade
     if ((datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time()) 
-        # and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
+        and (datetime.now(IST).time() < datetime.strptime('09:40', '%H:%M').time())
         ):
         # Fetching all entries from table
         try:
@@ -421,44 +421,45 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
             '''
             cursor.execute(fetch_all_query)
             rows = cursor.fetchall()
-            
+            ce_rover = None
+            pe_rover = None
             for row in rows:
                 if name in str(row[0]) and 'CE' in str(row[0])[-2:] and row[1]>0:
                     ce_rover = row
                 if name in str(row[0]) and 'PE' in str(row[0])[-2:] and row[1]>0:
                     pe_rover = row
-            
-            ce_row = ce_rover
-            long_instru_ce,long_tradsym_ce,long_quan_ce,long_buy_ce =  ce_row[2],ce_row[0] ,ce_row[1],ce_row[3]
-            pe_row = pe_rover
-            long_instru_pe,long_tradsym_pe,long_quan_pe,long_buy_pe =  pe_row[2],pe_row[0],pe_row[1],pe_row[3]
+            if ce_rover and pe_rover:
+                ce_row = ce_rover
+                long_instru_ce,long_tradsym_ce,long_quan_ce,long_buy_ce =  ce_row[2],ce_row[0] ,ce_row[1],ce_row[3]
+                pe_row = pe_rover
+                long_instru_pe,long_tradsym_pe,long_quan_pe,long_buy_pe =  pe_row[2],pe_row[0],pe_row[1],pe_row[3]
 
-            ltp_ce = ((kite.quote(int(long_instru_ce)))[str(long_instru_ce)])['last_price']
-            ltp_pe = ((kite.quote(int(long_instru_pe)))[str(long_instru_pe)])['last_price']
-            try:
-                sqliteConnection = sqlite3.connect('SQLite_Python.db')
-                cursor = sqliteConnection.cursor()
-                # print("Database created and Successfully Connected to SQLite")
-                
-                
-                print(f'\nExiting Long STRADDLE FOR \n{long_tradsym_ce} Of Quantity {long_quan_ce} \nand\n{long_tradsym_pe} of Quantity {long_quan_pe}')
+                ltp_ce = ((kite.quote(int(long_instru_ce)))[str(long_instru_ce)])['last_price']
+                ltp_pe = ((kite.quote(int(long_instru_pe)))[str(long_instru_pe)])['last_price']
+                try:
+                    sqliteConnection = sqlite3.connect('SQLite_Python.db')
+                    cursor = sqliteConnection.cursor()
+                    # print("Database created and Successfully Connected to SQLite")
+                    
+                    
+                    print(f'\nExiting Long STRADDLE FOR \n{long_tradsym_ce} Of Quantity {long_quan_ce} \nand\n{long_tradsym_pe} of Quantity {long_quan_pe}')
 
-                insert_data_query = '''
-                    INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
-                    VALUES (?, ?, ?,?,?);
-                '''
-                data_to_insert = (long_tradsym_ce, long_quan_ce*-1,long_instru_ce,ltp_ce,datetime.now(IST))
-                cursor.execute(insert_data_query, data_to_insert)
-                data_to_insert = (long_tradsym_pe, long_quan_pe*-1,long_instru_pe,ltp_pe,datetime.now(IST))
-                cursor.execute(insert_data_query, data_to_insert)
+                    insert_data_query = '''
+                        INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
+                        VALUES (?, ?, ?,?,?);
+                    '''
+                    data_to_insert = (long_tradsym_ce, long_quan_ce*-1,long_instru_ce,ltp_ce,datetime.now(IST))
+                    cursor.execute(insert_data_query, data_to_insert)
+                    data_to_insert = (long_tradsym_pe, long_quan_pe*-1,long_instru_pe,ltp_pe,datetime.now(IST))
+                    cursor.execute(insert_data_query, data_to_insert)
 
-                sqliteConnection.commit()
-                                    
-                if sqliteConnection:    
-                    cursor.close()
+                    sqliteConnection.commit()
+                                        
+                    if sqliteConnection:    
+                        cursor.close()
 
-            except sqlite3.Error as error:
-                print("Error while working with SQLite:", error)
+                except sqlite3.Error as error:
+                    print("Error while working with SQLite:", error)
                     
             if sqliteConnection:    
                 cursor.close()

@@ -242,7 +242,8 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                 #             KiteConnect.ORDER_TYPE_MARKET)
 
     # Check if it's time to exit the trade
-    if datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time():
+    if (datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time()
+    ):
         for position in existing_positions:
             if (get_name_from_instrument_token(instruments,position['instrument_token']) == name 
                 and position['quantity'] > 0 

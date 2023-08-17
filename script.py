@@ -96,16 +96,36 @@ for index, row in login.iterrows():
     short_long_stock_and_quan[row['name']] = eval(row['short long straddle'])
     # long_stock_and_quan[row['name']] = eval(row['long straddle'])
     kite = KiteConnect(api_key=api_key)
-    print('Please Login and Access your Request Token for',row['name'],kite.login_url())
-    request_token = input('Please Enter the Request Token :')
-    data = kite.generate_session(request_token,api_secret=api_secret)
-    session[row['name']]=kite
-    short_instrums = []
-    for i in kite.instruments():
-        if (i['name'] in eval(row['short long straddle']).keys()):
-            if i['expiry'] == cal_last_thru():
-                short_instrums.append(i)
-    usr_instrums[row['name']] = short_instrums
+    last_access_token = row['LastAccessToken']
+    name = row['name']
+    try:
+        if len(last_access_token)>=10:
+            kite.set_access_token(last_access_token)
+            delp = kite.profile()
+            print(f'Auto Login Successful for {name}')
+            short_instrums = []
+            for i in kite.instruments():
+                if (i['name'] in eval(row['short long straddle']).keys()):
+                    if i['expiry'] == cal_last_thru():
+                        short_instrums.append(i)
+            usr_instrums[row['name']] = short_instrums
+                
+    except:    
+        print('Please Login and Access your Request Token for',row['name'],kite.login_url())
+        request_token = input('Please Enter the Request Token :')
+        data = kite.generate_session(request_token,api_secret=api_secret)
+        session[row['name']]=kite
+        login.loc[index, 'LastAccessToken'] =  data["access_token"]
+        unnamed_columns = [col for col in login.columns if 'Unnamed' in col]
+        login = login.drop(columns=unnamed_columns)
+        login.to_csv('login.csv')
+        short_instrums = []
+        for i in kite.instruments():
+            if (i['name'] in eval(row['short long straddle']).keys()):
+                if i['expiry'] == cal_last_thru():
+                    short_instrums.append(i)
+        usr_instrums[row['name']] = short_instrums
+        
 
 # Assuming you have imported symbols and defined the short_straddle function
 
