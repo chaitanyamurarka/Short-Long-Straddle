@@ -17,6 +17,16 @@ def net_quant_zero(existing_positions,name):
                     p = False
         return p
 
+def long_net_quant_zero(existing_positions,name):
+    if len(existing_positions)==0 :
+        return True
+    else:
+        p = True
+        for i in existing_positions:
+                if name in i['tradingsymbol'] and i['quantity'] > 0:
+                    p = False
+        return p    
+    
 def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
     print('\nScanning Entry Short Straddle Option Chain for:',name)
     IST = pytz.timezone('Asia/Kolkata')
@@ -232,7 +242,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) <= second_last_thursday)
         )
         ):
-        if not net_quant_zero(existing_positions,name):
+        if long_net_quant_zero(existing_positions,name):
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(existing_positions,instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 print(f'\nENTERING Long STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
