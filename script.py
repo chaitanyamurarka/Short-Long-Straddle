@@ -144,22 +144,26 @@ def check_open_order(kite,name):
         return p
 
 def process_row(row):
-    kite = session[row['name']]
-    existing_positions = kite.positions()['net']
-    usr_posi = []
-    for i in existing_positions:
-        if i['exchange']=='NFO':
-            usr_posi.append(i)
-    instruments = usr_instrums[row['name']]
-    for key, val in short_long_stock_and_quan[row['name']].items():
-        try:
-            if check_open_order(kite,key):
-                short_straddle(row['name'],key, val, kite, instruments, usr_posi)
-                time.sleep(0.3)
-                long_straddle(row['name'],key, val, kite, instruments, usr_posi)
-        except Exception as e:
-            logging.info(e)
-            pass
+    try:
+        kite = session[row['name']]
+        existing_positions = kite.positions()['net']
+        usr_posi = []
+        for i in existing_positions:
+            if i['exchange']=='NFO':
+                usr_posi.append(i)
+        instruments = usr_instrums[row['name']]
+        for key, val in short_long_stock_and_quan[row['name']].items():
+            try:
+                if check_open_order(kite,key):
+                    short_straddle(row['name'],key, val, kite, instruments, usr_posi)
+                    time.sleep(0.3)
+                    long_straddle(row['name'],key, val, kite, instruments, usr_posi)
+            except Exception as e:
+                logging.info(e)
+                pass
+    except Exception as e:
+        logging.info(e)
+        pass
 
 # Use a ThreadPoolExecutor for managing concurrent processing
 with ThreadPoolExecutor(max_workers=4) as executor:
