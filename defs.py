@@ -99,7 +99,7 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
                                 tradingsymbol_pe = j['tradingsymbol']
                                 lot_size_pe = j['lot_size']   
                                 instru_pe = j['instrument_token']
-                    logging.info(datetime.now(IST))
+
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def long_get_symbol_lotsize(rows,instruments,name,last_thursday_date_dt,kite):
@@ -220,7 +220,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
         if net_quant_zero(kite,name):
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                print(f'\nENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
+                logging.info(f'\n{datetime.now(IST)} ENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
 
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
@@ -288,7 +288,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 sell_pe = get_sell_pe_from_ce(rows,name)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                print(f"\nFor {client} Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")
+                logging.info(f"\n{datetime.now(IST)} For {client} Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")
                 if (
                     (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                 or (
@@ -300,7 +300,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                     (ltp_ce <= sell_ce*0.5) or (ltp_pe <= sell_pe*0.5)
                 )):
                     try:
-                        print(f'\nExiting SHORT STRADDLE FOR \n{position[0]} Of Quantity {position[1]} \nand\n{trad_pe} of Quantity {position[1]}')
+                        logging.info(f'\n{datetime.now(IST)} Exiting SHORT STRADDLE FOR \n{position[0]} Of Quantity {position[1]} \nand\n{trad_pe} of Quantity {position[1]}')
 
                         insert_data_query = '''
                             INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)
@@ -370,7 +370,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
         if not net_quant_zero(kite,name):
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(rows,instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                print(f'\nENTERING Long STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
+                logging.info(f'\n{datetime.now(IST)} ENTERING Long STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
 
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
@@ -442,7 +442,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                     # print("Database created and Successfully Connected to SQLite")
                     
                     
-                    print(f'\nExiting Long STRADDLE FOR \n{long_tradsym_ce} Of Quantity {long_quan_ce} \nand\n{long_tradsym_pe} of Quantity {long_quan_pe}')
+                    logging.info(f'\n{datetime.now(IST)} Exiting Long STRADDLE FOR \n{long_tradsym_ce} Of Quantity {long_quan_ce} \nand\n{long_tradsym_pe} of Quantity {long_quan_pe}')
 
                     insert_data_query = '''
                         INSERT INTO portfolio (tradingsymbol, quantity, instrument_token,sell_price,timestamp)

@@ -15,7 +15,7 @@ IST = pytz.timezone('Asia/Kolkata')
 # Generate a unique log file name with a timestamp
 log_file = f"log_{datetime.now(IST).strftime('%Y%m%d_%H%M%S')}.log"
 logging.basicConfig(filename=log_file, level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+                    format="%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 # %%
 # Checking connection
@@ -98,6 +98,7 @@ for index, row in login.iterrows():
     kite = KiteConnect(api_key=api_key)
     last_access_token = row['LastAccessToken']
     name = row['name']
+    session[row['name']]=kite
     try:
         if len(last_access_token)>=10:
             kite.set_access_token(last_access_token)
@@ -169,7 +170,6 @@ with ThreadPoolExecutor(max_workers=4) as executor:
             for future in futures:
                 future.result()
             time.sleep(0.3)  # Adjust the delay as needed
-            logging.info(datetime.now(IST))
         else:
             print('Session Ended. Please Restart')
             break  # Exit the loop when outside the processing time window
