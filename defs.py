@@ -262,7 +262,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
     # Check if it's time to enter the trade
     if (
-        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time() and datetime.now(IST).time() < datetime.strptime('15:25', '%H:%M').time()
+        datetime.now(IST).time() >= datetime.strptime('09:30', '%H:%M').time()
         and (
             (int(datetime.now(IST).today().strftime('%d')) >= int(first_friday) and int(datetime.now(IST).today().strftime('%d')) < last_friday)
         or 
