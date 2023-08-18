@@ -9,7 +9,7 @@ import pandas as pd
   
 IST = pytz.timezone('Asia/Kolkata')
           
-def net_quant_zero(kite,name):
+def short_net_quant_zero(instruments,name):
     try:
         # Connect to the SQLite database or create it if not exists
         sqliteConnection = sqlite3.connect('SQLite_Python.db')
@@ -32,16 +32,63 @@ def net_quant_zero(kite,name):
             cursor.close()
             return True
         elif len(rows)>0:
-            quan = 0
-            for row in rows:
-                if name in str(row[0]):
-                    quan += row[1]
-            if quan == 0:
-                cursor.close()
-                return True
-            else:
-                cursor.close()
-                return False
+            p = True
+            for position in rows:
+                posi_quan = 0
+                if (get_name_from_instrument_token(instruments,position[2]) == name):  # Assuming short positions
+                    if position[1] < 0:
+                        for posi in rows:
+                            if posi[0] == position[0]:
+                                posi_quan += posi[1]
+                if posi_quan < 0:
+                        p = False
+            return p
+            
+        # Close the cursor
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Error while working with SQLite:", error)
+    finally:
+        # Close the database connection if it's open
+        if sqliteConnection:
+            sqliteConnection.close()
+            # print("The SQLite connection is closed")
+            
+def long_net_quant_zero(instruments,name):
+    try:
+        # Connect to the SQLite database or create it if not exists
+        sqliteConnection = sqlite3.connect('SQLite_Python.db')
+
+        # Create a cursor to interact with the database
+        cursor = sqliteConnection.cursor()
+        # print("Database created and Successfully Connected to SQLite")
+
+        # Fetch all rows from the 'portfolio' table
+        fetch_all_query = '''
+            SELECT * FROM portfolio;
+        '''
+        cursor.execute(fetch_all_query)
+        rows = cursor.fetchall()
+
+        # Print fetched rows
+        # print("Fetched Rows from 'portfolio' table:")
+        if len(rows)==0:
+            # Close the cursor
+            cursor.close()
+            return True
+        elif len(rows)>0:
+            p = True
+            for position in rows:
+                posi_quan = 0
+                if (get_name_from_instrument_token(instruments,position[2]) == name):  # Assuming short positions
+                    if position[1] > 0:
+                        for posi in rows:
+                            if posi[0] == position[0]:
+                                posi_quan += posi[1]
+                if posi_quan > 0:
+                        p = False
+            return p
             
         # Close the cursor
         cursor.close()
@@ -222,7 +269,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
         (int(datetime.now(IST).today().strftime('%d')) == last_friday and datetime.now(IST).time() <= datetime.strptime('14:00', '%H:%M').time())
         )
         ):
-        if net_quant_zero(kite,name):
+        if short_net_quant_zero(instruments,name):
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 logging.info(f'{datetime.now(IST)} ENTERING SHORT STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
@@ -377,7 +424,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                 sqliteConnection.close()
                 # print("The SQLite connection is closed")
                 
-        if not net_quant_zero(kite,name):
+        if long_net_quant_zero(instruments,name):
             tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = long_get_symbol_lotsize(rows,instruments,name,last_thursday_date_dt,kite)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
                 logging.info(f'{datetime.now(IST)} ENTERING Long STRADDLE FOR \n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} & {val} lots\nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe} & {val} lots')
@@ -414,7 +461,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
 
     # Check if it's time to exit the trade
     if ((datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time()) 
-        and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
+        # and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
         ):
         # Fetching all entries from table
         try:
@@ -433,7 +480,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
             rows = cursor.fetchall()
             ce_rover = None
             pe_rover = None
-            if net_quant_zero(kite,name):
+            if not long_net_quant_zero(instruments,name):
                 for row in rows:
                     if name in str(row[0]) and 'CE' in str(row[0])[-2:] and row[1]>0:
                         ce_rover = row

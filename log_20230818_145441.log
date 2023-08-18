@@ -1,0 +1,87 @@
+2023-08-18 14:54:51.322644+05:30 Exiting Long STRADDLE FOR 
+RELIANCE23AUG2540CE Of Quantity 1250 
+and
+RELIANCE23AUG2580PE of Quantity 1250
+2023-08-18 14:54:51.721770+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.75 & PE ltp 42
+2023-08-18 14:54:51.834546+05:30 Exiting Long STRADDLE FOR 
+HDFCBANK23AUG1590CE Of Quantity 1100 
+and
+HDFCBANK23AUG1630PE of Quantity 1100
+2023-08-18 14:54:52.220631+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.3 & PE ltp 32.45
+2023-08-18 14:54:52.337063+05:30 Exiting Long STRADDLE FOR 
+INFY23AUG1410CE Of Quantity 1200 
+and
+INFY23AUG1420PE of Quantity 1200
+2023-08-18 14:54:52.715839+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 5.55 & PE ltp 26.6
+2023-08-18 14:54:52.715839+05:30 Exiting SHORT STRADDLE FOR 
+INFY23AUG1420CE Of Quantity -1200 
+and
+INFY23AUG1410PE of Quantity -1200
+2023-08-18 14:54:52.847570+05:30 Exiting Long STRADDLE FOR 
+SBIN23AUG560CE Of Quantity 12000 
+and
+SBIN23AUG575PE of Quantity 12000
+2023-08-18 14:54:53.236020+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 14.1 & PE ltp 6.3
+2023-08-18 14:54:53.236020+05:30 Exiting SHORT STRADDLE FOR 
+SBIN23AUG565CE Of Quantity -12000 
+and
+SBIN23AUG570PE of Quantity -12000
+2023-08-18 14:54:53.361826+05:30 Exiting Long STRADDLE FOR 
+BHARTIARTL23AUG850CE Of Quantity 950 
+and
+BHARTIARTL23AUG860PE of Quantity 950
+2023-08-18 14:54:53.754906+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.15 & PE ltp 7.4
+2023-08-18 14:54:54.551476+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.65 & PE ltp 42
+2023-08-18 14:54:55.029943+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.3 & PE ltp 32.45
+Scanning Entry Short Straddle Option Chain for INFY
+2023-08-18 14:54:55.509527+05:30 ENTERING SHORT STRADDLE FOR 
+INFY23AUG1390CE OF LOT SIZE 400 & 3 lots
+and
+INFY23AUG1390PE of LOT SIZE 400 & 3 lots
+2023-08-18 14:54:55.678262+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 15.75 & PE ltp 14.4
+Scanning Entry Short Straddle Option Chain for SBIN
+2023-08-18 14:54:56.116472+05:30 ENTERING SHORT STRADDLE FOR 
+SBIN23AUG575CE OF LOT SIZE 1500 & 8 lots
+and
+SBIN23AUG575PE of LOT SIZE 1500 & 8 lots
+2023-08-18 14:54:56.286852+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.45 & PE ltp 8.7
+2023-08-18 14:54:56.717954+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.15 & PE ltp 7.4
+2023-08-18 14:54:57.491298+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.7 & PE ltp 42
+2023-08-18 14:54:57.922234+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.3 & PE ltp 32.45
+2023-08-18 14:54:58.354664+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16.35 & PE ltp 14.2
+2023-08-18 14:54:58.799348+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.45 & PE ltp 8.7
+2023-08-18 14:54:59.237825+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.15 & PE ltp 7.45
+2023-08-18 14:55:00.010547+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.75 & PE ltp 42
+2023-08-18 14:55:00.443982+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.3 & PE ltp 32.45
+2023-08-18 14:55:00.877474+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16.25 & PE ltp 13.95
+2023-08-18 14:55:01.310307+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.45 & PE ltp 8.75
+2023-08-18 14:55:01.727337+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.15 & PE ltp 7.45
+2023-08-18 14:55:02.498743+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.7 & PE ltp 42
+2023-08-18 14:55:02.951032+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.3 & PE ltp 32.3
+2023-08-18 14:55:03.402378+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16 & PE ltp 14
+2023-08-18 14:55:03.866175+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.4 & PE ltp 8.8
+2023-08-18 14:55:04.351872+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.15 & PE ltp 7.25
+2023-08-18 14:55:05.369869+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.65 & PE ltp 42
+2023-08-18 14:55:05.793259+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.35 & PE ltp 32.3
+2023-08-18 14:55:06.241260+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16 & PE ltp 14
+2023-08-18 14:55:06.727650+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.4 & PE ltp 8.8
+2023-08-18 14:55:07.160341+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.15 & PE ltp 7.25
+2023-08-18 14:55:07.935064+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.7 & PE ltp 42
+2023-08-18 14:55:08.371548+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.35 & PE ltp 32.3
+2023-08-18 14:55:08.799636+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16.15 & PE ltp 13.9
+2023-08-18 14:55:09.269367+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.35 & PE ltp 8.8
+2023-08-18 14:55:09.702005+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.3 & PE ltp 7.25
+2023-08-18 14:55:10.458773+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.8 & PE ltp 41.8
+2023-08-18 14:55:10.907833+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.35 & PE ltp 32.3
+2023-08-18 14:55:11.339647+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16.15 & PE ltp 13.9
+2023-08-18 14:55:11.776265+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.35 & PE ltp 8.8
+2023-08-18 14:55:12.193407+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.3 & PE ltp 7.25
+2023-08-18 14:55:12.967716+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 43.85 & PE ltp 41.85
+2023-08-18 14:55:13.412344+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.35 & PE ltp 32.3
+2023-08-18 14:55:13.844936+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16.15 & PE ltp 13.9
+2023-08-18 14:55:14.265899+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.35 & PE ltp 8.8
+2023-08-18 14:55:14.700233+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for BHARTIARTL with current CE ltp 10.3 & PE ltp 7.25
+2023-08-18 14:55:15.507018+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for RELIANCE with current CE ltp 44 & PE ltp 41.65
+2023-08-18 14:55:15.957790+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for HDFCBANK with current CE ltp 17.35 & PE ltp 32.3
+2023-08-18 14:55:16.405839+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for INFY with current CE ltp 16.15 & PE ltp 13.9
+2023-08-18 14:55:16.837136+05:30 For ChaitanyaMurarka Checking Short Exit Condtion for SBIN with current CE ltp 8.35 & PE ltp 8.8
