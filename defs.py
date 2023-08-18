@@ -461,7 +461,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
 
     # Check if it's time to exit the trade
     if ((datetime.now(IST).time() >= datetime.strptime('09:25', '%H:%M').time()) 
-        # and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
+        and (datetime.now(IST).time() < datetime.strptime('09:30', '%H:%M').time())
         ):
         # Fetching all entries from table
         try:
