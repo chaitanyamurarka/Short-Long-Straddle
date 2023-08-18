@@ -8,6 +8,7 @@ from kiteconnect import KiteConnect
 import pandas as pd
   
 IST = pytz.timezone('Asia/Kolkata')
+
           
 def short_net_quant_zero(instruments,name):
     try:
@@ -257,6 +258,17 @@ def cal_dates():
     first_friday = 1 + days_to_add
     return first_friday,last_friday,last_thursday_date_dt
 
+def cal_sec_last_thurs():
+    # Calculate the dae of last friday and thursday of the current month
+    IST = pytz.timezone('Asia/Kolkata')
+    year = int(datetime.now(IST).today().strftime('%Y'))
+    month = int(datetime.now(IST).today().strftime('%m'))
+    last_day = calendar.monthrange(year, month)[1]
+    last_weekday = calendar.weekday(year, month, last_day)
+    last_thursday = last_day - ((7 - (3 - last_weekday)) % 7)
+    second_last_thurs = last_thursday - 7
+    return second_last_thurs
+
 def short_straddle(client,name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
@@ -391,8 +403,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
 def long_straddle(client,name,val,kite,instruments,existing_positions):
     IST = pytz.timezone('Asia/Kolkata')
     first_friday,last_friday,last_thursday_date_dt = cal_dates()
-    second_last_thursday = last_friday-8
-    # Check if it's time to enter the trade
+    second_last_thursday = cal_sec_last_thurs()
     if (
         datetime.now(IST).time() >= datetime.strptime('15:25', '%H:%M').time()
         and (
@@ -457,6 +468,7 @@ def long_straddle(client,name,val,kite,instruments,existing_positions):
                     # Close the database connection if it's open
                     if sqliteConnection:
                         sqliteConnection.close()
+    
 
 
     # Check if it's time to exit the trade
