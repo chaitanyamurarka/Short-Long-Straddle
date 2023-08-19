@@ -235,9 +235,9 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 )
                 ):
                     print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                    # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    # place_order(kite,position['tradingsymbol'], 0, abs(position['quantity']), kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                     #             KiteConnect.ORDER_TYPE_MARKET)
-                    # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    # place_order(kite,trad_pe, 0, abs(position['quantity']), kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                     #             KiteConnect.ORDER_TYPE_MARKET)
                 else:
                     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
