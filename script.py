@@ -146,7 +146,7 @@ def check_open_order(kite,name):
 def process_row(row):
     try:
         kite = session[row['name']]
-        existing_positions = kite.positions()['net']
+        existing_positions = kite.positions()['data']['net']
         usr_posi = []
         for i in existing_positions:
             if i['exchange']=='NFO':
