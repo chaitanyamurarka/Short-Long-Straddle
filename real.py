@@ -27,9 +27,9 @@ def long_net_quant_zero(existing_positions,name):
                     p = False
         return p    
     
-def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
-    print('\nScanning Entry Short Straddle Option Chain for:',name)
+def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite,client):
     IST = pytz.timezone('Asia/Kolkata')
+    logging.info(f'{datetime.now(IST)} For {client} Scanning Entry Short Straddle Option Chain of {name}')
     ltp = kite.ltp(f'NSE:{name}')[f'NSE:{name}']['last_price']
     strike = None  # Initialize ATM to None
     diff = None
@@ -72,57 +72,61 @@ def short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite):
                                 tradingsymbol_pe = j['tradingsymbol']
                                 lot_size_pe = j['lot_size']   
                                 instru_pe = j['instrument_token']
-                    logging.info(datetime.now(IST))
     return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
 
 def long_get_symbol_lotsize(existing_positions,instruments,name,last_thursday_date_dt,kite):
-            
+    
+    ce_rover = None
+    pe_rover = None  
     for position in existing_positions:
         if name in str(position['tradingsymbol']) and 'CE' in str(position['tradingsymbol'])[-2:] and position['quantity']<0:
             ce_rover = position
         if name in str(position['tradingsymbol']) and 'PE' in str(position['tradingsymbol'])[-2:] and position['quantity']<0:
             pe_rover = position
     
-    ce_row = ce_rover
-    short_instru_ce,short_tradsym_ce =  ce_row['instrument_token'],ce_row['tradingsymbol']  
-    pe_row = pe_rover
-    short_instru_pe,short_tradsym_pe =  pe_row['instrument_token'],pe_row['tradingsymbol']
-    
-    for i in instruments:
-        if i['tradingsymbol'] == short_tradsym_ce:
-            ce_strike = i['strike']
-        if i['tradingsymbol'] == short_tradsym_pe:
-            pe_strike = i['strike']
-            
-    long_ce_strike = None
-    long_pe_strike = None
+    if ce_rover and pe_rover:
+        ce_row = ce_rover
+        short_instru_ce,short_tradsym_ce =  ce_row['instrument_token'],ce_row['tradingsymbol']  
+        pe_row = pe_rover
+        short_instru_pe,short_tradsym_pe =  pe_row['instrument_token'],pe_row['tradingsymbol']
 
-    diff = None        
-    for i in instruments:
-        if i['instrument_type']=='CE':
-            if i['name'] == name:
-                if i['expiry'] == last_thursday_date_dt:
-                    if i['strike']<ce_strike:
-                        if long_ce_strike is None or abs(float(i['strike']) - ce_strike) < diff:
-                            long_ce_strike = i['strike']
-                            diff = abs(float(long_ce_strike - ce_strike))
-                            tradingsymbol_ce = i['tradingsymbol']
-                            lot_size_ce = i['lot_size']
-                            instru_ce = i['instrument_token']    
-    diff = None  
-    for i in instruments:
-        if i['instrument_type']=='PE':
-            if i['name'] == name:
-                if i['expiry'] == last_thursday_date_dt:
-                    if i['strike']>pe_strike:
-                        if long_pe_strike is None or abs(float(i['strike']) - pe_strike) < diff:
-                            long_pe_strike = i['strike']
-                            diff = abs(float(long_pe_strike - pe_strike))
-                            tradingsymbol_pe = i['tradingsymbol']
-                            lot_size_pe = i['lot_size']
-                            instru_pe = i['instrument_token']  
-    
-    return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
+        for i in instruments:
+            if i['tradingsymbol'] == short_tradsym_ce:
+                ce_strike = i['strike']
+            if i['tradingsymbol'] == short_tradsym_pe:
+                pe_strike = i['strike']
+
+        long_ce_strike = None
+        long_pe_strike = None
+
+        diff = None        
+        for i in instruments:
+            if i['instrument_type']=='CE':
+                if i['name'] == name:
+                    if i['expiry'] == last_thursday_date_dt:
+                        if i['strike']<ce_strike:
+                            if long_ce_strike is None or abs(float(i['strike']) - ce_strike) < diff:
+                                long_ce_strike = i['strike']
+                                diff = abs(float(long_ce_strike - ce_strike))
+                                tradingsymbol_ce = i['tradingsymbol']
+                                lot_size_ce = i['lot_size']
+                                instru_ce = i['instrument_token']    
+        diff = None  
+        for i in instruments:
+            if i['instrument_type']=='PE':
+                if i['name'] == name:
+                    if i['expiry'] == last_thursday_date_dt:
+                        if i['strike']>pe_strike:
+                            if long_pe_strike is None or abs(float(i['strike']) - pe_strike) < diff:
+                                long_pe_strike = i['strike']
+                                diff = abs(float(long_pe_strike - pe_strike))
+                                tradingsymbol_pe = i['tradingsymbol']
+                                lot_size_pe = i['lot_size']
+                                instru_pe = i['instrument_token']  
+
+        return tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe,instru_ce,instru_pe
+    else:
+        return None,None,None,None,None,None
 
 def place_order(kite,tradingSymbol, price, qty, direction, exchangeType, product, orderType):
     try:
@@ -202,9 +206,9 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
         )
         ):
         if short_net_quant_zero(existing_positions,name):
-            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite)
+            tradingsymbol_ce,lot_size_ce,tradingsymbol_pe,lot_size_pe ,instru_ce,instru_pe = short_get_symbol_lotsize(instruments,name,last_thursday_date_dt,kite,client)
             if (tradingsymbol_ce is not None and lot_size_ce is not None and tradingsymbol_pe is not None and lot_size_pe is not None):
-                print(f'\nENTERING SHORT STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
+                logging.info(f'{datetime.now(IST)} For {client} ENTERING SHORT STRADDLE FOR {val} lots\n{tradingsymbol_ce} OF LOT SIZE {lot_size_ce} \nand\n{tradingsymbol_pe} of LOT SIZE {lot_size_pe}')
                 # place_order(kite,tradingsymbol_ce, 0, lot_size_ce*val, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                 # KiteConnect.ORDER_TYPE_MARKET)
                 # place_order(kite,tradingsymbol_pe, 0, lot_size_pe*val, kite.TRANSACTION_TYPE_SELL, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
@@ -222,7 +226,7 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 sell_pe = get_sell_pe_from_ce(existing_positions,name)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
-                print(f"\nFor {client} Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")
+                logging.info(f"{datetime.now(IST)} For {client} Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")
                 if (
                     (ltp_ce >= 2 * ltp_pe) or (ltp_pe >= 2 * ltp_ce)
                 or (
@@ -235,9 +239,9 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 )
                 ):
                     print(f'\nCode to Exit the Trade {name} ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
-                    # place_order(kite,position['tradingsymbol'], 0, abs(position['quantity']), kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    # place_order(kite,position['tradingsymbol'], 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                     #             KiteConnect.ORDER_TYPE_MARKET)
-                    # place_order(kite,trad_pe, 0, abs(position['quantity']), kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
+                    # place_order(kite,trad_pe, 0, position['quantity'], kite.TRANSACTION_TYPE_BUY, KiteConnect.EXCHANGE_NFO, KiteConnect.PRODUCT_NRML,
                     #             KiteConnect.ORDER_TYPE_MARKET)
                 else:
                     print(f'\n Exit Condtion not met for {name}, ltp ce {ltp_ce} ,ltp pe {ltp_pe}')
