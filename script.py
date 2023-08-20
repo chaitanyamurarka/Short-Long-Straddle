@@ -134,12 +134,12 @@ for index, row in login.iterrows():
 def check_open_order(kite,name):
     null = None
     false = False
-    order = kite.orders()
-    if len(order)==0:
+    orders = kite.orders()
+    if len(orders)==0:
         return True
     else:
         p = True
-        for i in kite.orders()['data']:
+        for i in orders:
             if name in i['tradingsymbol']:
                 if i['status']=='OPEN':
                     p = False

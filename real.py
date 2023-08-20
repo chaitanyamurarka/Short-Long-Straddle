@@ -169,7 +169,7 @@ def get_sell_ce(kite,name):
     orders = kite.orders()
     diff = None
     last_time = None
-    for i in orders['data']:
+    for i in orders:
         if ((i['exchange_update_timestamp'] is not None) 
             and name in i['tradingsymbol']  
             and 'CE' in i['tradingsymbol'][-2:] 
@@ -191,7 +191,7 @@ def get_sell_pe_from_ce(kite,name):
     orders = kite.orders()
     diff = None
     last_time = None
-    for i in orders['data']:
+    for i in orders:
         if ((i['exchange_update_timestamp'] is not None) 
             and name in i['tradingsymbol']  
             and 'PE' in i['tradingsymbol'][-2:] 
