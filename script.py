@@ -7,8 +7,8 @@ import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 from kiteconnect import KiteConnect
 from datetime import datetime
-from virtual import long_net_quant_zero,short_net_quant_zero,short_get_symbol_lotsize,long_get_symbol_lotsize,place_order,get_name_from_instrument_token,get_instru_tradesymbol_pe_from_ce,cal_dates,short_straddle,long_straddle,cal_sec_last_thurs
-# from real import short_net_quant_zero,short_get_symbol_lotsize,long_get_symbol_lotsize,place_order,get_name_from_instrument_token,cal_dates,short_straddle,long_straddle,short_get_instru_tradesymbol_pe_from_ce,long_get_instru_tradesymbol_pe_from_ce,long_net_quant_zero,cal_sec_last_thurs,get_sell_ce
+# from virtual import short_straddle,long_straddle
+from real import short_straddle,long_straddle
 
 
 login = pd.read_csv('login.csv')
@@ -148,7 +148,7 @@ def check_open_order(kite,name):
 def process_row(row):
     try:
         kite = session[row['name']]
-        existing_positions = kite.positions()['data']['net']
+        existing_positions = kite.positions()['net']
         usr_posi = []
         for i in existing_positions:
             if i['exchange']=='NFO':
