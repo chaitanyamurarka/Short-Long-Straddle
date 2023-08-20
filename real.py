@@ -161,10 +161,50 @@ def long_get_instru_tradesymbol_pe_from_ce(existing_positions,name):
         if name in position['tradingsymbol'] and 'PE' in position['tradingsymbol'][-2:] and position['quantity'] > 0:
             return position['instrument_token'],position['tradingsymbol']
         
-def get_sell_pe_from_ce(existing_positions,name):
-    for position in existing_positions:
-        if (name in position['tradingsymbol']  and 'PE' in position['tradingsymbol'][-2:] and position['quantity'] < 0):
-            return position['sell_price']
+def get_sell_ce(kite,name):
+    IST = pytz.timezone('Asia/Kolkata')
+    null = None
+    false = False
+    time.sleep(0.3)
+    orders = kite.orders()
+    diff = None
+    last_time = None
+    for i in orders['data']:
+        if ((i['exchange_update_timestamp'] is not None) 
+            and name in i['tradingsymbol']  
+            and 'CE' in i['tradingsymbol'][-2:] 
+            and i['transaction_type'] == 'SELL'
+            and i['status']=='COMPLETE'):
+            datetime_object = datetime.strptime(i['exchange_update_timestamp'], "%Y-%m-%d %H:%M:%S")
+            time_difference = abs(datetime.now(IST) - datetime_object)
+            if last_time is None or time_difference < diff:
+                last_time = datetime_object
+                diff = time_difference
+                price = i['average_price']
+    return price
+                
+def get_sell_pe_from_ce(kite,name):
+    IST = pytz.timezone('Asia/Kolkata')
+    null = None
+    false = False
+    time.sleep(0.3)
+    orders = kite.orders()
+    diff = None
+    last_time = None
+    for i in orders['data']:
+        if ((i['exchange_update_timestamp'] is not None) 
+            and name in i['tradingsymbol']  
+            and 'PE' in i['tradingsymbol'][-2:] 
+            and i['transaction_type'] == 'SELL'
+            and i['status']=='COMPLETE'):
+            datetime_object = datetime.strptime(i['exchange_update_timestamp'], "%Y-%m-%d %H:%M:%S")
+            time_difference = abs(datetime.now(IST) - datetime_object)
+            if last_time is None or time_difference < diff:
+                last_time = datetime_object
+                diff = time_difference
+                price = i['average_price']
+    return price
+    
   
 def cal_dates():
     IST = pytz.timezone('Asia/Kolkata')
@@ -222,8 +262,8 @@ def short_straddle(client,name,val,kite,instruments,existing_positions):
                 and 'CE' in position['tradingsymbol'][-2:]):  # Assuming short positions
                 instru_ce = position['instrument_token']
                 instru_pe,trad_pe = short_get_instru_tradesymbol_pe_from_ce(existing_positions,name)
-                sell_ce = position['sell_price']
-                sell_pe = get_sell_pe_from_ce(existing_positions,name)
+                sell_ce = get_sell_ce(kite,position['tradingsymbol'])
+                sell_pe = get_sell_pe_from_ce(kite,trad_pe)
                 ltp_ce = ((kite.quote(int(instru_ce)))[str(instru_ce)])['last_price']
                 ltp_pe = ((kite.quote(int(instru_pe)))[str(instru_pe)])['last_price']
                 logging.info(f"{datetime.now(IST)} For {client} Checking Short Exit Condtion for {name} with current CE ltp {ltp_ce} & PE ltp {ltp_pe}")

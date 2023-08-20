@@ -132,6 +132,8 @@ for index, row in login.iterrows():
 # Assuming you have imported symbols and defined the short_straddle function
 
 def check_open_order(kite,name):
+    null = None
+    false = False
     order = kite.orders()
     if len(order)==0:
         return True
