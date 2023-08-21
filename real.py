@@ -175,8 +175,8 @@ def get_sell_ce(kite,name):
             and 'CE' in i['tradingsymbol'][-2:] 
             and i['transaction_type'] == 'SELL'
             and i['status']=='COMPLETE'):
-            datetime_object = datetime.strptime(i['exchange_update_timestamp'], "%Y-%m-%d %H:%M:%S")
-            time_difference = abs(datetime.now(IST) - datetime_object)
+            datetime_object = i['exchange_update_timestamp']
+            time_difference = datetime.now(IST) - datetime_object
             if last_time is None or time_difference < diff:
                 last_time = datetime_object
                 diff = time_difference
@@ -197,8 +197,8 @@ def get_sell_pe_from_ce(kite,name):
             and 'PE' in i['tradingsymbol'][-2:] 
             and i['transaction_type'] == 'SELL'
             and i['status']=='COMPLETE'):
-            datetime_object = datetime.strptime(i['exchange_update_timestamp'], "%Y-%m-%d %H:%M:%S")
-            time_difference = abs(datetime.now(IST) - datetime_object)
+            datetime_object = i['exchange_update_timestamp']
+            time_difference = datetime.now(IST) - datetime_object
             if last_time is None or time_difference < diff:
                 last_time = datetime_object
                 diff = time_difference
